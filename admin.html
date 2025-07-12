@@ -28,8 +28,6 @@
   <input id="image" placeholder="URL изображения" />
   <input id="price" placeholder="Цена по умолчанию (STAR)" />
   <select id="rarity">
-      <option value="tested">tested</option>
-    <option value="error">error</option>
     <option value="">Выбери редкость</option>
     <option value="0.01%">0.01%</option>
     <option value="0.1%">0.1%</option>
@@ -39,6 +37,8 @@
     <option value="3%">3%</option>
     <option value="4%">4%</option>
     <option value="5%">5%</option>
+    <option value="tested">tested</option>
+    <option value="error">error</option>
   </select>
   <input id="quantity" type="number" placeholder="Сколько NFT выпустить" />
   <button onclick="addModel()">Выпустить NFT</button>
@@ -51,25 +51,20 @@
 <div class="section">
   <div class="balance-inputs">
     <input id="userLogin" placeholder="Логин пользователя" />
-    <input id="amountToAdd" placeholder="Сумма (можно минус)" type="number" />
+    <input id="amountToAdd" placeholder="Сумма (можно отрицательная)" type="number" />
   </div>
   <button onclick="changeBalance()">Изменить баланс</button>
 </div>
 
 <script>
-  // Префикс для генерации кода NFT — 0000001
-  // + две буквы (aa, ab, ac...) зависят от модели (индекса)
-  // Нумерация с 1
-
   function padNum(num, len = 7) {
     return String(num).padStart(len, '0');
   }
-  
+
   function generateNFTCode(modelIndex, indexInModel) {
-    // letters: 0 -> 'aa', 1 -> 'ab', ...
     const letter1 = String.fromCharCode(97 + (modelIndex % 26));
     const letter2 = String.fromCharCode(97 + Math.floor(modelIndex / 26));
-    return padNum(indexInModel + 1) + letter2 + letter1; // e.g. "0000001aa"
+    return padNum(indexInModel + 1) + letter2 + letter1;
   }
 
   function getModels() {
@@ -104,14 +99,12 @@
     }
 
     let models = getModels();
-    // Найдем модель с таким названием, если есть — иначе создадим новую
     let modelIndex = models.findIndex(m => m.title === title);
     if (modelIndex === -1) {
       modelIndex = models.length;
       models.push({ title, image, price, rarity, system: "extem beta" });
       setModels(models);
     } else {
-      // Обновим данные модели (картинку, цену, редкость)
       models[modelIndex].image = image;
       models[modelIndex].price = price;
       models[modelIndex].rarity = rarity;
@@ -119,11 +112,8 @@
     }
 
     let nfts = getNFTs();
-
-    // Считаем сколько уже есть NFT этой модели
     const existingCount = Object.values(nfts).filter(n => n.title === title).length;
 
-    // Создаем NFT с уникальным кодом для модели
     for (let i = 0; i < quantity; i++) {
       const code = generateNFTCode(modelIndex, existingCount + i);
       const id = Date.now() + i + Math.floor(Math.random()*1000);
