@@ -17,12 +17,16 @@
   img { max-width: 80px; max-height: 60px; border-radius: 6px; }
   .delete-btn { background: #cc3300; }
   .delete-btn:hover { background: #990000; }
+
+  #balanceControl { margin-top: 30px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px #ccc; }
+  #balanceControl label { margin-top: 10px; }
 </style>
 </head>
 <body>
 
 <h1>Админка NFT Биржи</h1>
 
+<!-- Форма выпуска NFT -->
 <form id="createNFTForm">
   <label>Название NFT (модель):</label>
   <input type="text" id="modelName" placeholder="Например: Модель1" required />
@@ -57,11 +61,22 @@
   </tbody>
 </table>
 
+<!-- Управление балансом пользователей -->
+<div id="balanceControl">
+  <h2>Управление балансом пользователей</h2>
+  <label>Логин пользователя:</label>
+  <input type="text" id="userLogin" placeholder="Введите логин пользователя" />
+  
+  <label>Сумма (можно отрицательное число для снятия):</label>
+  <input type="number" id="balanceChange" placeholder="Например: 100 или -50" />
+
+  <button id="changeBalanceBtn">Изменить баланс</button>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getDatabase, ref, get, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+  import { getDatabase, ref, get, set, update, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
-  // Настройки Firebase - используй свои
   const firebaseConfig = {
     apiKey: "AIzaSyAAgeGGJAqYjQf0B8W_K7OX01aoriYeULo",
     authDomain: "nft-birga.firebaseapp.com",
@@ -102,15 +117,12 @@
     counter++;
     await setModelCounter(model, counter);
 
-    // Формируем код вида: 0000001aa - 12 цифр с буквами aa (шаблон)
-    // Будем кодировать номер в hex + 'aa' в конце для простоты:
-    let codeNum = counter.toString(16).padStart(9, '0'); // 9 hex символов
+    // Формируем код вида: 0000001aa - 9 hex + "aa"
+    let codeNum = counter.toString(16).padStart(9, '0'); 
     let code = codeNum + 'aa';
 
-    // Формируем уникальный id для NFT
     let id = model + '_' + code;
 
-    // Создаем объект NFT
     let nft = {
       id,
       code,
@@ -123,19 +135,13 @@
       price: 0
     };
 
-    // Записываем в базу
     await set(ref(db, 'nfts/' + id), nft);
-
     alert('NFT выпущен: ' + title + ' с кодом ' + code);
-
-    // Очистить форму
     e.target.reset();
-
-    // Обновить таблицу
     loadHistory();
   });
 
-  // Загрузить и показать историю NFT
+  // Загрузить историю NFT
   async function loadHistory() {
     const tbody = document.querySelector('#historyTable tbody');
     tbody.innerHTML = '';
@@ -147,6 +153,7 @@
 
     Object.values(nfts).forEach(nft => {
       const tr = document.createElement('tr');
+
       tr.innerHTML = `
         <td>${nft.code}</td>
         <td>${nft.title}</td>
@@ -156,10 +163,11 @@
         <td>${nft.owner}</td>
         <td><button class="delete-btn" data-id="${nft.id}">Удалить</button></td>
       `;
+
       tbody.appendChild(tr);
     });
 
-    // Вешаем обработчики удаления
+    // Кнопки удаления NFT (админ может удалять любые)
     document.querySelectorAll('.delete-btn').forEach(btn => {
       btn.onclick = async () => {
         if (confirm('Удалить этот NFT?')) {
@@ -174,6 +182,38 @@
 
   loadHistory();
 
+  // Управление балансом пользователей
+  document.getElementById('changeBalanceBtn').addEventListener('click', async () => {
+    const login = document.getElementById('userLogin').value.trim();
+    const changeStr = document.getElementById('balanceChange').value.trim();
+
+    if (!login) {
+      alert('Введите логин пользователя');
+      return;
+    }
+    if (!changeStr || isNaN(Number(changeStr))) {
+      alert('Введите корректную сумму (число)');
+      return;
+    }
+    const change = Number(changeStr);
+
+    // Получаем данные пользователя
+    const userSnap = await get(ref(db, 'users/' + login));
+    if (!userSnap.exists()) {
+      alert('Пользователь не найден');
+      return;
+    }
+    const user = userSnap.val();
+
+    // Изменяем баланс (может уйти в минус)
+    let newBalance = (user.balance || 0) + change;
+    await update(ref(db, 'users/' + login), { balance: newBalance });
+    alert(`Баланс пользователя ${login} изменён. Новый баланс: ${newBalance}`);
+
+    // Очистка полей
+    document.getElementById('userLogin').value = '';
+    document.getElementById('balanceChange').value = '';
+  });
 </script>
 
 </body>
