@@ -1,127 +1,102 @@
 <!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Биржа NFT</title>
 <style>
-  body{background:#eef4fb;font-family:sans-serif;margin:0;padding:0}
-  header{background:#0077cc;color:#fff;padding:20px;text-align:center;position:relative}
-  #userInfo{margin-top:10px;font-weight:bold}
-  #loginBox,#filters,#profileSection,#chatSection,.container,#telegram{max-width:600px;margin:20px auto}
-  #loginBox input,#loginBox button,#profileSection button,input.salePrice{width:100%;padding:10px;margin:8px 0;font-size:16px}
-  #filters select{width:49%;padding:8px;margin:8px 0;font-size:16px}
-  .container{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-  .card{background:#fff;border-radius:8px;padding:10px;width:180px;text-align:center;box-shadow:0 0 5px #aaa}
-  .card img{width:100%;height:100px;object-fit:cover}
-  button{background:#0077cc;color:#fff;border:none;padding:8px;border-radius:4px;cursor:pointer;font-size:14px}
-  button:hover{background:#005fa3}
-  #profileSection{background:#fff;padding:15px;border-radius:8px;box-shadow:0 0 5px #aaa;display:none}
-  #chatSection{background:#fff;padding:15px;border-radius:8px;box-shadow:0 0 5px #aaa;display:none}
-  #chatSection textarea{width:100%;padding:8px;margin:8px 0;font-size:14px}
-  #telegram img{width:150px;cursor:pointer;margin-bottom:20px}
+ body{margin:0;padding:0;font-family:sans-serif;background:#eef4fb;}
+ header{background:#0077cc;color:#fff;padding:15px;text-align:center;}
+ #content, #profile{max-width:600px;margin:auto;padding:20px;}
+ .card{background:#fff;padding:10px;margin:10px;border-radius:6px;box-shadow:0 0 5px #aaa;}
+ .card img{max-width:100%;height:120px;}
+ .card button{padding:8px;border:none;border-radius:4px;background:#0077cc;color:#fff;cursor:pointer;}
+ .salePrice{width:60px;margin-right:8px;}
 </style></head><body>
-<header><h1>Биржа NFT</h1><div id="userInfo"></div></header>
-<div id="loginBox"><input id="login" placeholder="Логин"><input id="password" type="password" placeholder="Пароль"><button onclick="login()">Войти/Регистрация</button></div>
-<div id="filters" style="display:none"><select id="priceSort" onchange="render()"><option value="">Сорт: нет</option><option value="asc">По возрастанию</option><option value="desc">По убыванию</option></select><select id="rarityFilter" onchange="render()"><option value="">Все редкости</option><option>0.01%</option><option>0.1%</option><option>0.5%</option><option>1%</option><option>2%</option><option>3%</option><option>4%</option><option>5%</option><option>tested</option><option>error</option></select></div>
-<div class="container" id="nftContainer" style="display:none"></div>
-<div id="profileSection">
-  <h2 id="uname"></h2><p>Баланс: <span id="ubalance"></span>★</p><h3>Мои NFT</h3><div class="container" id="myNFTs"></div><button onclick="logout()">Выйти</button>
+<header><h1>Биржа NFT</h1><div id="userinfo"></div></header>
+
+<div id="login">
+  <input id="uLogin" placeholder="Логин"><input id="uPass" type="password" placeholder="Пароль">
+  <button onclick="login()">Войти/Регистрация</button>
 </div>
-<div id="chatSection"><h3>Чат с пользователями</h3><select id="chatTo" onchange="loadChat()"></select><textarea id="chatText" rows="3"></textarea><button onclick="send()">Отправить</button><div id="chatLog" style="max-height:200px;overflow-y:auto;margin-top:10px"></div></div>
-<div id="telegram"><a href="https://t.me/Maxsimka172" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg"></a></div>
+
+<div id="content" style="display:none;">
+  <h3>Все NFT</h3><div id="allNFTs"></div>
+</div>
+
+<div id="profile" style="display:none;">
+  <h3>Мои NFT</h3><div id="myNFTs"></div><button onclick="logout()">Выйти</button>
+</div>
 
 <script>
-  const S=() => JSON.parse(localStorage.getItem('users')||'{}'), U=us=>localStorage.setItem('users', JSON.stringify(us));
-  const T=()=>JSON.parse(localStorage.getItem('nfts')||'{}'), V=ns=>localStorage.setItem('nfts', JSON.stringify(ns));
-  const M=()=>JSON.parse(localStorage.getItem('messages')||'[]'), W=ms=>localStorage.setItem('messages', JSON.stringify(ms));
+function getUsers(){return JSON.parse(localStorage.getItem('users')||'{}');}
+function saveUsers(u){localStorage.setItem('users',JSON.stringify(u));}
+function getNFTs(){return JSON.parse(localStorage.getItem('nfts')||'{}');}
+function saveNFTs(n){localStorage.setItem('nfts',JSON.stringify(n));}
+let me=null;
 
-  let me=null;
-  function login(){
-    const l=document.getElementById('login').value.trim(), p=document.getElementById('password').value;
-    if(!l||!p)return alert('Введите логин/пароль');
-    let us=S();
-    if(!us[l])us[l]={password:p,balance:0}; else if(us[l].password!==p)return alert('Неверный пароль');
-    U(us); me=l; init();
-  }
+function login(){
+  const l=document.getElementById('uLogin').value.trim(), p=document.getElementById('uPass').value.trim();
+  if(!l||!p) return alert('Введите логин и пароль');
+  const u=getUsers();
+  if(!u[l]) u[l]={password:p,balance:0};
+  else if(u[l].password!==p) return alert('Неверный пароль');
+  saveUsers(u); me=l; init();
+}
 
-  function init(){
-    document.getElementById('loginBox').style.display='none';
-    document.getElementById('filters').style.display='block';
-    document.getElementById('nftContainer').style.display='flex';
-    document.getElementById('profileSection').style.display='block';
-    document.getElementById('chatSection').style.display='block';
-    document.getElementById('uname').textContent=me;
-    updateBal(); render(); loadMy(); loadChatUsers(); loadChat();
-  }
+function logout(){me=null;location.reload();}
 
-  function logout(){
-    me=null;
-    document.location.reload();
-  }
+function init(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('content').style.display='block';
+  document.getElementById('profile').style.display='block';
+  document.getElementById('userinfo').innerText = 'Пользователь: '+me+' • Баланс: '+getUsers()[me].balance+'★';
+  renderAll(); renderMy();
+}
 
-  function updateBal(){
-    document.getElementById('ubalance').textContent = (S()[me].balance||0).toFixed(2);
-    document.getElementById('userInfo').textContent = `Пользователь: ${me} • Баланс: ${(S()[me].balance||0).toFixed(2)}★`;
-  }
+function renderAll(){
+  const n=Object.values(getNFTs());
+  document.getElementById('allNFTs').innerHTML = n.map(x=>`
+    <div class="card">
+      <img src="${x.image}">
+      <b>${x.title}</b><br>${x.code}<br>${x.price}★ • ${x.rarity}<br>Владелец: ${x.owner}<br>
+      ${x.forSale && x.owner!==me ? `<button onclick="buy('${x.id}')">Купить</button>` : ''}
+    </div>`).join('');
+}
 
-  function render(){
-    const ns=Object.values(T());
-    const pf=document.getElementById('priceSort').value, rf=document.getElementById('rarityFilter').value;
-    let arr=ns.filter(n=>!rf||n.rarity===rf);
-    if(pf==='asc')arr.sort((a,b)=>a.price-b.price); else if(pf==='desc')arr.sort((a,b)=>b.price-a.price);
-    document.getElementById('nftContainer').innerHTML=arr.map(n=>`
-      <div class="card">
-      <img src="${n.image}"><b>${n.title}</b><br>Код: ${n.code}<br>Цена: ${n.price}★<br>Владелец: ${n.owner}<br>
-      ${(n.forSale && n.owner!==me)?`<button onclick="buy('${n.id}')">Купить</button>`: ''}
-      </div>`).join('')||'<p>Нет NFT</p>';
-  }
+function renderMy(){
+  const meNFT = Object.values(getNFTs()).filter(x=>x.owner===me);
+  document.getElementById('myNFTs').innerHTML = meNFT.map(x=>`
+    <div class="card">
+      <img src="${x.image}">
+      <b>${x.title}</b><br>${x.code}<br>
+      <input class="salePrice" id="p${x.id}" placeholder="Цена"><button onclick="toggleSale('${x.id}')">
+        ${x.forSale?'Снять':'Продать'}
+      </button>
+    </div>`).join('');
+}
 
-  function loadMy(){
-    const ns=Object.values(T()).filter(n=>n.owner===me);
-    document.getElementById('myNFTs').innerHTML=ns.map(n=>`
-      <div class="card" style="width:150px">
-      <img src="${n.image}"><b>${n.title}</b><br>Код:${n.code}<br>
-      <input class="salePrice" type="number" id="s_${n.id}" placeholder="Цена"><br>
-      <button onclick="sell('${n.id}')">${n.forSale?'Снять с продажи':'Продать'}</button>
-      </div>`).join('')||'<p>У вас нет NFT</p>';
+function toggleSale(id){
+  const nfts=getNFTs(), u=getUsers();
+  const x=nfts[id];
+  if(!x) return;
+  if(x.forSale){
+    x.forSale=false;
+  } else {
+    const p=parseFloat(document.getElementById('p'+id).value);
+    if(!p||p<=0) return alert('Цена > 0');
+    x.price=p; x.forSale=true;
   }
+  saveNFTs(nfts); renderAll(); renderMy();
+}
 
-  function buy(id){
-    const ns=T(), us=S();
-    const n=ns[id]; if(!n||n.owner===me)return;
-    const bal=us[me].balance||0;
-    if(bal<n.price)return alert('Недостаточно средств');
-    us[me].balance=bal-n.price;
-    us[n.owner].balance=(us[n.owner].balance||0)+n.price;
-    n.owner=me; n.forSale=false;
-    S(us); V(ns); updateBal(); render(); loadMy();
-    alert('Куплено!');
-  }
-
-  function sell(id){
-    const inp=document.getElementById('s_'+id), val=parseFloat(inp.value);
-    const ns=T(); const n=ns[id]; if(!n||n.owner!==me)return;
-    n.forSale = !n.forSale;
-    if(n.forSale){
-      if(!val||val<=0)return alert('Укажи цену'); n.price=val;
-    }
-    V(ns); render(); loadMy();
-  }
-
-  function loadChatUsers(){
-    const sel=document.getElementById('chatTo');
-    sel.innerHTML=Object.keys(S()).filter(u=>u!==me).map(u=>`<option>${u}</option>`).join('');
-  }
-
-  function send(){
-    const to=document.getElementById('chatTo').value;
-    const txt=document.getElementById('chatText').value.trim();
-    if(!to||!txt)return;
-    const ms=M(); ms.push({from:me,to,txt,time:Date.now()}); W(ms); loadChat();
-  }
-
-  function loadChat(){
-    const to=document.getElementById('chatTo').value;
-    const ms=M().filter(m=>(m.from===me&&m.to===to)||(m.from===to&&m.to===me));
-    document.getElementById('chatLog').innerHTML = ms.sort((a,b)=>a.time-b.time).map(m=>`<p><b>${m.from}:</b> ${m.txt}</p>`).join('');
-  }
+function buy(id){
+  const nfts=getNFTs(), u=getUsers();
+  const x=nfts[id];
+  if(u[me].balance < x.price) return alert('Недостаточно средств');
+  u[me].balance -= x.price;
+  u[x.owner].balance += x.price;
+  x.owner=me; x.forSale=false;
+  saveUsers(u); saveNFTs(nfts);
+  document.getElementById('userinfo').innerText = 'Пользователь: '+me+' • Баланс: '+u[me].balance+'★';
+  renderAll(); renderMy();
+  alert('Куплено!');
+}
 </script>
 </body></html>
-
 
