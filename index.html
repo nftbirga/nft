@@ -1,23 +1,34 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="UTF-8"><title>Биржа NFT</title>
-<style>
-body,html{margin:0;padding:0;height:100%;font-family:sans-serif;background:#eef4fb;}
-.header{background:#0077cc;color:#fff;padding:20px;text-align:center;font-size:28px;}
-.main{padding:20px; display:flex;flex-direction:column;align-items:center;}
-.login-box, .profile-box{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.1);max-width:320px;width:100%;margin-bottom:20px;}
-.login-box input{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:4px;font-size:16px;}
-.login-box button, .profile-box button{width:100%;padding:14px;font-size:18px;border:none;border-radius:6px;color:#fff;cursor:pointer;}
-.login-box button{background:#0077cc;}
-.profile-box button.logout{background:#ff4444;margin-top:10px;}
-.filters{display:none;gap:10px;margin-bottom:20px;}
-.filters select{padding:8px;border:1px solid #ccc;border-radius:4px;font-size:16px;}
-.container{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;width:100%;}
-.card{background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);width:240px;overflow:hidden;text-align:center;}
-.card img{width:100%;height:140px;object-fit:cover;}
-.card p{margin:8px;font-size:14px;}
-.card button{margin:12px;padding:10px 16px;font-size:16px;border:none;border-radius:6px;background:#0077cc;color:#fff;cursor:pointer;}
-</style></head><body>
-<div class="header">Биржа NFT</div>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>NFT Биржа</title>
+  <style>
+    body, html { margin:0; padding:0; font-family:sans-serif; background:#eef4fb; height:100%; display:flex; flex-direction:column; }
+    header { background:#0077cc; color:white; text-align:center; padding:20px; font-size:28px; }
+    .main { flex:1; padding:20px; display:flex; flex-direction:column; align-items:center; }
+    .login-box, .profile-box { background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); width:300px; margin-bottom:20px; }
+    .login-box input { width:100%; padding:10px; margin:8px 0; font-size:16px; border-radius:4px; border:1px solid #ccc; }
+    .login-box button, .profile-box button { width:100%; padding:12px; margin-top:10px; font-size:17px; border:none; border-radius:6px; color:white; cursor:pointer; }
+    .login-box button { background:#0077cc; }
+    .profile-box button.logout { background:#ff4444; }
+    .filters { display:none; margin-bottom:20px; gap:10px; }
+    .filters select { padding:8px; font-size:16px; border-radius:4px; border:1px solid #ccc; }
+    .container { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; }
+    .card { background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.15); width:240px; text-align:center; overflow:hidden; }
+    .card img { width:100%; height:140px; object-fit:cover; }
+    .card p { margin:8px; font-size:14px; }
+    .card button { margin:12px; padding:10px 16px; font-size:15px; border:none; border-radius:6px; background:#0077cc; color:white; cursor:pointer; }
+    .chat { background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); width:90%; max-width:600px; margin-top:20px; }
+    .chat select, .chat input { width:100%; padding:8px; margin:6px 0; border:1px solid #ccc; border-radius:4px; }
+    .chat div.messages { height:200px; overflow-y:auto; border:1px solid #ddd; padding:8px; border-radius:4px; margin-bottom:6px; background:#f9f9f9; }
+    .chat button { width:100%; padding:10px; background:#0077cc; color:white; border:none; border-radius:6px; cursor:pointer; }
+    .telegram { text-align:center; padding:10px; }
+    .telegram img { width:200px; cursor:pointer; }
+  </style>
+</head>
+<body>
+<header>Биржа NFT</header>
 <div class="main">
   <div id="loginBox" class="login-box">
     <h2>Вход / Регистрация</h2>
@@ -25,29 +36,55 @@ body,html{margin:0;padding:0;height:100%;font-family:sans-serif;background:#eef4
     <input id="password" type="password" placeholder="Пароль">
     <button onclick="loginUser()">Войти / Зарегистрироваться</button>
   </div>
+
   <div id="profileBox" class="profile-box" style="display:none;">
     <h2>Привет, <span id="userName"></span>!</h2>
-    <p>Баланс: <span id="userBalance"></span>★</p>
+    <p>Баланс: <span id="userBalance"></span> STAR</p>
     <button class="logout" onclick="logoutUser()">Выйти</button>
   </div>
+
   <div id="filters" class="filters">
     <select id="sortPrice" onchange="renderNFTs()">
       <option value="">— Сортировка —</option>
-      <option value="asc">Дешёвые →</option>
-      <option value="desc">Дорогие →</option>
+      <option value="asc">Сначала дешёвые</option>
+      <option value="desc">Сначала дорогие</option>
     </select>
     <select id="filterRarity" onchange="renderNFTs()">
       <option value="">— Редкость —</option>
-      <option value="0.01%">0.01%</option><option value="0.1%">0.1%</option><option value="0.5%">0.5%</option>
-      <option value="1%">1%</option><option value="2%">2%</option><option value="3%">3%</option><option value="4%">4%</option><option value="5%">5%</option><option value="tested">tested</option><option value="error">error</option>
+      <option value="0.01%">0.01%</option>
+      <option value="0.1%">0.1%</option>
+      <option value="0.5%">0.5%</option>
+      <option value="1%">1%</option>
+      <option value="2%">2%</option>
+      <option value="3%">3%</option>
+      <option value="4%">4%</option>
+      <option value="5%">5%</option>
+      <option value="tested">tested</option>
+      <option value="error">error</option>
     </select>
   </div>
+
   <div class="container" id="nftContainer"></div>
+
+  <div class="chat">
+    <h3>Чат</h3>
+    <select id="chatUser"></select>
+    <div class="messages" id="chatMessages"></div>
+    <input id="chatText" placeholder="Сообщение">
+    <button onclick="sendMessage()">Отправить</button>
+  </div>
+</div>
+
+<div class="telegram">
+  <a href="https://t.me/Maxsimka172" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram">
+  </a>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getDatabase, ref, get, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+import { getDatabase, ref, get, set, onValue, push } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
 const db = getDatabase(initializeApp({
   apiKey:"AIzaSyAAgeGGJAqYjQf0B8W_K7OX01aoriYeULo",
   authDomain:"nft-birga.firebaseapp.com",
@@ -59,75 +96,112 @@ const db = getDatabase(initializeApp({
   measurementId:"G-2Q5WNT0VGQ"
 }));
 
-let currentUser = null, nftData = {};
+let currentUser = null, nftData = {}, usersList = [];
 
 async function loginUser(){
-  const l=document.getElementById("login").value.trim();
-  const p=document.getElementById("password").value.trim();
-  if(!l||!p){ alert("Введите логин и пароль"); return; }
-  const snap = await get(ref(db, "users/"+l));
+  const l = document.getElementById("login").value.trim();
+  const p = document.getElementById("password").value.trim();
+  if(!l || !p){ alert("Введите логин и пароль"); return; }
+  const snap = await get(ref(db, "users/" + l));
   if(snap.exists() && snap.val().password !== p){ alert("Неверный пароль"); return; }
-  await set(ref(db, "users/"+l), { password:p, balance:snap.val()?.balance||0 });
-  currentUser = l; showProfile();
+  await set(ref(db, "users/" + l), { password: p, balance: snap.val()?.balance || 0 });
+  currentUser = l;
+  showProfile();
+  loadChatUsers();
 }
 
 async function showProfile(){
-  document.getElementById("loginBox").style.display="none";
-  document.getElementById("profileBox").style.display="block";
-  document.getElementById("filters").style.display="flex";
-  const u=await get(ref(db, "users/"+currentUser));
-  document.getElementById("userName").textContent=currentUser;
-  document.getElementById("userBalance").textContent=u.val().balance;
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("profileBox").style.display = "block";
+  document.getElementById("filters").style.display = "flex";
+  const u = await get(ref(db, "users/" + currentUser));
+  document.getElementById("userName").textContent = currentUser;
+  document.getElementById("userBalance").textContent = u.val().balance;
   renderNFTs();
 }
 
 function logoutUser(){
-  currentUser=null;
-  document.getElementById("profileBox").style.display="none";
-  document.getElementById("filters").style.display="none";
-  document.getElementById("loginBox").style.display="block";
+  currentUser = null;
+  document.getElementById("profileBox").style.display = "none";
+  document.getElementById("filters").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
 }
 
 function renderNFTs(){
-  const arr = Object.entries(nftData).map(([k,v])=>({key:k,...v}));
-  const fr=document.getElementById("filterRarity").value;
-  const sp=document.getElementById("sortPrice").value;
-  let list = arr.filter(n=>!fr||n.rarity===fr);
-  if(sp) list.sort((a,b)=> sp==="asc"?a.price-b.price:b.price-a.price);
-  document.getElementById("nftContainer").innerHTML = list.map(n=>`
-    <div class="card"><img src="${n.image}">
-      <p><b>${n.title}</b></p><p>${n.code}</p><p>${n.price}★ • ${n.rarity}</p>
-      ${(n.owner===currentUser && !n.forSale)?`<button onclick="sellNFT('${n.key}')">Продать</button>`:
-       (n.forSale && n.owner!==currentUser)?`<button onclick="buyNFT('${n.key}',${n.price})">Купить</button>`:""}
+  const arr = Object.entries(nftData).map(([k,v]) => ({key:k, ...v}));
+  const fr = document.getElementById("filterRarity").value;
+  const sp = document.getElementById("sortPrice").value;
+  let list = arr.filter(n => !fr || n.rarity === fr);
+  if(sp) list.sort((a,b) => sp === "asc" ? a.price - b.price : b.price - a.price);
+
+  document.getElementById("nftContainer").innerHTML = list.map(n => `
+    <div class="card">
+      <img src="${n.image}">
+      <p><b>${n.title}</b></p>
+      <p>${n.code}</p>
+      <p>${n.price} STAR • ${n.rarity}</p>
+      ${n.owner === currentUser && !n.forSale
+          ? `<button onclick="sellNFT('${n.key}')">Продать</button>`
+          : n.forSale && n.owner !== currentUser
+            ? `<button onclick="buyNFT('${n.key}',${n.price})">Купить</button>`
+            : ""}
     </div>`).join("");
 }
 
 async function sellNFT(k){
   const p = Number(prompt("Цена в STAR"));
   if(isNaN(p)) return;
-  await update(ref(db, "nfts/"+k), { price:p, forSale:true });
+  await set(ref(db, "nfts/" + k + "/price"), p);
+  await set(ref(db, "nfts/" + k + "/forSale"), true);
   renderNFTs();
 }
 
-async function buyNFT(k,price){
-  const us=await get(ref(db, "users/"+currentUser));
-  if(us.val().balance < price){ alert("Недостаточно средств"); return; }
-  const nf=await get(ref(db, "nfts/"+k));
-  const seller=nf.val().owner;
-  const ss=await get(ref(db, "users/"+seller));
-  await update(ref(db, "users/"+currentUser), { balance:us.val().balance-price });
-  await update(ref(db, "users/"+seller), { balance:(ss.val()?.balance||0)+price });
-  await update(ref(db, "nfts/"+k), { owner:currentUser, forSale:false });
+async function buyNFT(k, price){
+  const us = await get(ref(db, "users/" + currentUser));
+  if(us.val().balance < price){ alert("Недостаточно STAR"); return; }
+  const nf = await get(ref(db, "nfts/" + k));
+  const seller = nf.val().owner;
+  const ss = await get(ref(db, "users/" + seller));
+  await set(ref(db, "users/" + currentUser + "/balance"), us.val().balance - price);
+  await set(ref(db, "users/" + seller + "/balance"), (ss.val()?.balance || 0) + price);
+  await set(ref(db, "nfts/" + k + "/owner"), currentUser);
+  await set(ref(db, "nfts/" + k + "/forSale"), false);
   showProfile();
 }
 
-onValue(ref(db, "nfts"),snap=>{ nftData=snap.val()||{}; if(currentUser) renderNFTs(); });
+async function loadChatUsers(){
+  const snap = await get(ref(db, "users"));
+  usersList = Object.keys(snap.val() || {}).filter(u => u !== currentUser);
+  const sel = document.getElementById("chatUser");
+  sel.innerHTML = usersList.map(u => `<option value="${u}">${u}</option>`).join("");
+}
 
-window.loginUser=loginUser;
-window.logoutUser=logoutUser;
-window.sellNFT=sellNFT;
-window.buyNFT=buyNFT;
+onValue(ref(db, "nfts"), snap => { nftData = snap.val() || {}; if(currentUser) renderNFTs(); });
+
+onValue(ref(db, "chats/" + currentUser), snap => {
+  const msgs = snap.val() || [];
+  document.getElementById("chatMessages").innerHTML = msgs.map(m =>
+    `<div><b>${m.from}</b>: ${m.text}</div>`
+  ).join("");
+});
+
+async function sendMessage(){
+  const to = document.getElementById("chatUser").value;
+  const text = document.getElementById("chatText").value.trim();
+  if(!to || !text){ alert("Выберите пользователя и введите текст"); return; }
+  const msg = { from: currentUser, text, timestamp: Date.now() };
+  await push(ref(db, "chats/" + to), msg);
+  document.getElementById("chatText").value = "";
+}
+
+window.loginUser = loginUser;
+window.logoutUser = logoutUser;
+window.sellNFT = sellNFT;
+window.buyNFT = buyNFT;
+window.sendMessage = sendMessage;
+
 </script>
-</body></html>
+</body>
+</html>
 
 
