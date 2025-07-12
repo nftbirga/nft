@@ -4,66 +4,44 @@
   <meta charset="UTF-8" />
   <title>Админка NFT</title>
   <style>
-    body { font-family: sans-serif; background: #f5f7fb; padding: 20px; color: #333; }
-    h1, h2 { text-align: center; }
-    input, select, button {
-      padding: 8px;
-      margin: 5px 0;
-      width: 100%;
-      box-sizing: border-box;
-      font-size: 16px;
-    }
-    .box { max-width: 600px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 0 5px #ccc; }
-    .nft { margin-top: 10px; background: #eef; padding: 10px; border-radius: 6px; }
-    .chat { margin-top: 30px; }
-    #telegram { text-align: center; margin-top: 30px; }
-    #telegram img { width: 150px; cursor: pointer; }
+    body { font-family:sans-serif; background:#eef4fb; padding:20px; color:#333; }
+    h1,h2 { text-align:center; }
+    .box { max-width:600px; margin:20px auto; background:#fff; padding:15px; box-shadow:0 0 5px #aaa; border-radius:8px; }
+    .box input, .box select, .box button { width:100%; margin:8px 0; padding:8px; font-size:16px; }
+    .box button { cursor:pointer; background:#0077cc; color:#fff; border:none; border-radius:6px; }
+    .nft { margin-top:10px; padding:10px; background:#f0f8ff; border-radius:6px; }
+    #telegram{ text-align:center; margin-top:20px; }
+    #telegram img{ width:150px; cursor:pointer; }
   </style>
 </head>
 <body>
-
-<h1>Панель администратора</h1>
+<h1>Админка NFT</h1>
 
 <div class="box">
-  <h2>Создать новую модель NFT</h2>
-  <input id="title" placeholder="Название модели" />
-  <input id="image" placeholder="Ссылка на изображение" />
-  <input id="price" placeholder="Цена в STAR" />
+  <h2>Выпустить новую модель</h2>
+  <input id="title" placeholder="Название модели">
+  <input id="image" placeholder="URL изображения">
+  <input id="price" placeholder="Цена STAR" type="number">
   <select id="rarity">
-    <option value="">Выбери редкость</option>
-    <option value="0.01%">0.01%</option>
-    <option value="0.1%">0.1%</option>
-    <option value="0.5%">0.5%</option>
-    <option value="1%">1%</option>
-    <option value="2%">2%</option>
-    <option value="3%">3%</option>
-    <option value="4%">4%</option>
-    <option value="5%">5%</option>
-    <option value="tested">tested</option>
-    <option value="error">error</option>
+    <option value="">Редкость</option>
+    <option>0.01%</option><option>0.1%</option><option>0.5%</option>
+    <option>1%</option><option>2%</option><option>3%</option>
+    <option>4%</option><option>5%</option><option>tested</option><option>error</option>
   </select>
-  <input id="quantity" type="number" placeholder="Сколько NFT выпустить" />
+  <input id="quantity" placeholder="Количество" type="number">
   <button onclick="addModel()">Выпустить NFT</button>
 </div>
 
 <div class="box">
-  <h2>Баланс пользователя</h2>
-  <input id="userLogin" placeholder="Логин пользователя" />
-  <input id="amount" placeholder="Сколько STAR (можно отрицательно)" />
+  <h2>Управление балансом</h2>
+  <input id="userLogin" placeholder="Логин">
+  <input id="amount" placeholder="Сумма (+/-) STAR" type="number">
   <button onclick="changeBalance()">Изменить баланс</button>
 </div>
 
 <div class="box">
-  <h2>История выпусков (NFT от админа)</h2>
+  <h2>История NFT (admin)</h2>
   <div id="history"></div>
-</div>
-
-<div class="box chat">
-  <h2>Чат</h2>
-  <select id="chatUserSelect"></select>
-  <textarea id="chatText" placeholder="Сообщение..." rows="3"></textarea>
-  <button onclick="sendMessage()">Отправить</button>
-  <div id="chatMessages" style="max-height: 200px; overflow-y: auto; margin-top: 10px; background:#f0f0f0; padding: 10px;"></div>
 </div>
 
 <div id="telegram">
@@ -73,156 +51,65 @@
 </div>
 
 <script>
-  function getModels() {
-    return JSON.parse(localStorage.getItem('nftModels')) || [];
+  // Storage helpers
+  const M = () => JSON.parse(localStorage.getItem('nftModels')||'[]');
+  const S = v => localStorage.setItem('nftModels', JSON.stringify(v));
+  const N = () => JSON.parse(localStorage.getItem('nfts')||'{}');
+  const T = v => localStorage.setItem('nfts', JSON.stringify(v));
+  const U = () => JSON.parse(localStorage.getItem('users')||'{}');
+  const V = v => localStorage.setItem('users', JSON.stringify(v));
+
+  function pad(n){ return n.toString().padStart(7,'0'); }
+  function code(mIdx, idx){ 
+    const l1 = String.fromCharCode(97 + (mIdx % 26));
+    const l2 = String.fromCharCode(97 + Math.floor(mIdx/26));
+    return pad(idx+1) + l2 + l1;
   }
 
-  function getNFTs() {
-    return JSON.parse(localStorage.getItem('nfts')) || {};
-  }
+  function addModel(){
+    const t=document.getElementById('title').value.trim();
+    const im=document.getElementById('image').value.trim();
+    const pr=+document.getElementById('price').value;
+    const r=document.getElementById('rarity').value;
+    const q=+document.getElementById('quantity').value;
+    if(!t||!im||!pr||!r||!q) return alert('Заполните все поля');
 
-  function saveNFTs(nfts) {
-    localStorage.setItem('nfts', JSON.stringify(nfts));
-  }
-
-  function getUsers() {
-    return JSON.parse(localStorage.getItem('users')) || {};
-  }
-
-  function saveUsers(users) {
-    localStorage.setItem('users', JSON.stringify(users));
-  }
-
-  function getMessages() {
-    return JSON.parse(localStorage.getItem('messages')) || [];
-  }
-
-  function saveMessages(messages) {
-    localStorage.setItem('messages', JSON.stringify(messages));
-  }
-
-  function generateNFTCode(modelIndex, index) {
-    const num = String(index + 1).padStart(7, '0'); // 0000001
-    const letters = String.fromCharCode(97 + (modelIndex % 26)) + String.fromCharCode(97 + Math.floor(modelIndex / 26));
-    return num + letters;
-  }
-
-  function addModel() {
-    const title = titleInput.value.trim();
-    const image = imageInput.value.trim();
-    const price = parseFloat(priceInput.value.trim());
-    const rarity = rarityInput.value;
-    const quantity = parseInt(quantityInput.value.trim());
-
-    if (!title || !image || isNaN(price) || !rarity || !quantity || quantity <= 0) {
-      alert('Пожалуйста, заполните все поля корректно');
-      return;
+    let models=M();
+    let idx=models.findIndex(m=>m.title===t);
+    if(idx<0){
+      idx=models.length;
+      models.push({title:t, count:0});
     }
-
-    let models = getModels();
-    const modelIndex = models.findIndex(m => m.title === title);
-    let modelKey;
-
-    if (modelIndex === -1) {
-      models.push({ title, image, price, rarity, system: "extem beta", count: 0 });
-      modelKey = models.length - 1;
-    } else {
-      modelKey = modelIndex;
+    const count=models[idx].count;
+    let nfts=N();
+    for(let i=0;i<q;i++){
+      const id=Date.now()+''+i+Math.random();
+      nfts[id]={id, title:t, image:im, price:pr, rarity:r, code:code(idx, count+i), owner:'admin', forSale:false};
     }
-
-    const nfts = getNFTs();
-    let count = models[modelKey].count || 0;
-
-    for (let i = 0; i < quantity; i++) {
-      const id = Date.now().toString() + i;
-      const code = generateNFTCode(modelKey, count + i);
-      nfts[id] = { id, title, image, price, rarity, system: "extem beta", code, owner: "admin", forSale: false };
-    }
-
-    models[modelKey].count += quantity;
-
-    localStorage.setItem('nftModels', JSON.stringify(models));
-    saveNFTs(nfts);
-    renderHistory();
-    alert(`Выпущено ${quantity} NFT для модели "${title}"`);
+    models[idx].count += q;
+    S(models); T(nfts);
+    renderHistory(); alert('✅ NFT выпущены');
   }
 
-  function renderHistory() {
-    const nfts = getNFTs();
-    const div = document.getElementById('history');
-    const mine = Object.values(nfts).filter(nft => nft.owner === 'admin');
-
-    div.innerHTML = mine.map(n => `
-      <div class="nft">
-        <img src="${n.image}" width="100%">
-        <h4>${n.title}</h4>
-        <p>Код: ${n.code}</p>
-        <p>Цена: ${n.price} STAR</p>
-        <p>Редкость: ${n.rarity}</p>
-      </div>
-    `).join('');
+  function renderHistory(){
+    const nfts=Object.values(N()).filter(n=>n.owner==='admin');
+    const div=document.getElementById('history');
+    div.innerHTML = nfts.map(n=>`<div class="nft">
+      <img src="${n.image}" width="80"><br>
+      <b>${n.title}</b><br>Код: ${n.code}<br>Цена: ${n.price}★ • ${n.rarity}
+    </div>`).join('');
   }
 
-  function changeBalance() {
-    const login = document.getElementById('userLogin').value.trim();
-    const amount = parseFloat(document.getElementById('amount').value.trim());
-    if (!login || isNaN(amount)) {
-      alert('Введите логин и сумму');
-      return;
-    }
-    const users = getUsers();
-    if (!users[login]) users[login] = { password: '', balance: 0 };
-    users[login].balance += amount;
-    saveUsers(users);
-    alert(`Баланс ${login} изменён на ${amount > 0 ? '+' : ''}${amount} STAR`);
+  function changeBalance(){
+    const u=document.getElementById('userLogin').value.trim();
+    const a=+document.getElementById('amount').value;
+    if(!u||isNaN(a)) return alert('Введите логин и сумму');
+    const us=U(); if(!us[u]) us[u]={password:'',balance:0};
+    us[u].balance += a;
+    V(us); alert(`Баланс ${u} изменён на ${a}★`);
   }
-
-  function renderChatUsers() {
-    const users = getUsers();
-    const select = document.getElementById('chatUserSelect');
-    select.innerHTML = '';
-    Object.keys(users).forEach(user => {
-      const option = document.createElement('option');
-      option.value = user;
-      option.textContent = user;
-      select.appendChild(option);
-    });
-  }
-
-  function sendMessage() {
-    const to = document.getElementById('chatUserSelect').value;
-    const text = document.getElementById('chatText').value.trim();
-    if (!to || !text) {
-      alert('Выберите получателя и введите сообщение');
-      return;
-    }
-    const messages = getMessages();
-    messages.push({ from: 'admin', to, text, time: Date.now() });
-    saveMessages(messages);
-    document.getElementById('chatText').value = '';
-    renderMessages();
-  }
-
-  function renderMessages() {
-    const selectedUser = document.getElementById('chatUserSelect').value;
-    const messages = getMessages();
-    const div = document.getElementById('chatMessages');
-    div.innerHTML = '';
-    messages
-      .filter(m => (m.from === 'admin' && m.to === selectedUser) || (m.from === selectedUser && m.to === 'admin'))
-      .forEach(m => {
-        const msg = document.createElement('div');
-        msg.innerHTML = `<b>${m.from}</b>: ${m.text}`;
-        msg.style.marginBottom = '5px';
-        div.appendChild(msg);
-      });
-  }
-
-  document.getElementById('chatUserSelect').addEventListener('change', renderMessages);
 
   renderHistory();
-  renderChatUsers();
 </script>
-
 </body>
 </html>
