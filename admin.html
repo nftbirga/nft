@@ -1,75 +1,106 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head><meta charset="UTF-8"><title>Админка NFT</title>
-<style>
-  body{font-family:sans-serif;background:#eef4fb;padding:20px;}
-  .box{max-width:600px;margin:20px auto;background:#fff;padding:15px;border-radius:8px;box-shadow:0 0 5px #aaa;}
-  .box input,.box select,.box button{width:100%;padding:10px;margin:8px 0;font-size:16px;}
-  .box button{background:#0077cc;color:#fff;border:none;border-radius:6px;cursor:pointer;}
-</style>
+<head>
+  <meta charset="UTF-8">
+  <title>Админка NFT</title>
+  <style>
+    body { font-family: sans-serif; background: #eef4fb; padding: 20px; }
+    .box { max-width: 700px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 5px #aaa; }
+    input, select, button { width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; }
+    button { background: #0077cc; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .nft-item { display: flex; gap: 10px; align-items: center; margin: 8px 0; border-bottom: 1px solid #ccc; padding-bottom: 8px; }
+    .nft-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; }
+  </style>
 </head>
 <body>
-  <div class="box">
-    <h2>Выпустить NFT</h2>
-    <input id="title" placeholder="Название">
-    <input id="image" placeholder="URL картинки">
-    <input id="price" placeholder="Цена STAR" type="number">
-    <select id="rarity">
-      <option value="">Редкость</option>
-      <option>0.01%</option><option>0.1%</option><option>0.5%</option><option>1%</option><option>2%</option>
-      <option>3%</option><option>4%</option><option>5%</option><option>tested</option><option>error</option>
-    </select>
-    <input id="quantity" placeholder="Количество" type="number">
-    <button onclick="addNFT()">Выпустить</button>
-  </div>
 
-  <div class="box">
-    <h2>История выпущенных NFT (admin)</h2>
-    <div id="history"></div>
-  </div>
+<div class="box">
+  <h2>Выпустить NFT</h2>
+  <input id="title" placeholder="Название">
+  <input id="image" placeholder="URL картинки">
+  <input id="price" placeholder="Цена STAR" type="number">
+  <select id="rarity">
+    <option value="">Редкость</option>
+    <option>0.01%</option><option>0.1%</option><option>0.5%</option>
+    <option>1%</option><option>2%</option><option>3%</option>
+    <option>4%</option><option>5%</option><option>tested</option><option>error</option>
+  </select>
+  <input id="quantity" placeholder="Количество" type="number">
+  <button onclick="addNFT()">Выпустить</button>
+</div>
+
+<div class="box">
+  <h2>История выпущенных NFT</h2>
+  <div id="history"></div>
+</div>
 
 <script>
-function getModels(){return JSON.parse(localStorage.getItem('nftModels')||'[]');}
-function saveModels(m){localStorage.setItem('nftModels',JSON.stringify(m));}
-function getNFTs(){return JSON.parse(localStorage.getItem('nfts')||'{}');}
-function saveNFTs(n){localStorage.setItem('nfts',JSON.stringify(n));}
+function getModels(){ return JSON.parse(localStorage.getItem('nftModels') || '[]'); }
+function saveModels(m){ localStorage.setItem('nftModels', JSON.stringify(m)); }
+function getNFTs(){ return JSON.parse(localStorage.getItem('nfts') || '{}'); }
+function saveNFTs(n){ localStorage.setItem('nfts', JSON.stringify(n)); }
 
-function pad7(n){return ('0000000'+n).slice(-7);}
-function code(idx,i){const a=97+(idx%26),b=97+Math.floor(idx/26);return pad7(i+1)+String.fromCharCode(a)+String.fromCharCode(b);}
-
-function addNFT(){
-  const title=document.getElementById('title').value.trim();
-  const image=document.getElementById('image').value.trim();
-  const price=+document.getElementById('price').value;
-  const rarity=document.getElementById('rarity').value;
-  const qty=+document.getElementById('quantity').value;
-  if(!title||!image||!price||!rarity||!qty) return alert('Заполните все поля');
-
-  const models=getModels();
-  let idx=models.findIndex(m=>m.title===title);
-  if(idx<0){models.push({title,count:0}); idx=models.length-1;}
-  const start=models[idx].count;
-  models[idx].count+=qty;
-  saveModels(models);
-
-  const nfts=getNFTs();
-  for(let i=0;i<qty;i++){
-    const id=Date.now()+''+Math.random();
-    nfts[id]={id,title,image,price,rarity,code:code(idx,start+i),owner:'admin',forSale:false};
-  }
-  saveNFTs(nfts);
-  renderHistory();
-  alert('✅ Выпущено '+qty+' NFT');
+function pad7(n){ return ('0000000' + n).slice(-7); }
+function code(idx, i){ 
+  const a = 97 + (idx % 26), b = 97 + Math.floor(idx / 26);
+  return pad7(i + 1) + String.fromCharCode(a) + String.fromCharCode(b);
 }
 
-function renderHistory(){
-  const nfts=Object.values(getNFTs()).filter(n=>n.owner==='admin');
-  document.getElementById('history').innerHTML = nfts.map(n=>`
-    <div><b>${n.title}</b> | ${n.code} | ${n.price}★ | ${n.rarity}</div>
+function addNFT(){
+  const title = document.getElementById('title').value.trim();
+  const image = document.getElementById('image').value.trim();
+  const price = +document.getElementById('price').value;
+  const rarity = document.getElementById('rarity').value;
+  const qty = +document.getElementById('quantity').value;
+
+  if (!title || !image || !price || !rarity || !qty || qty <= 0) {
+    return alert('Заполните все поля корректно');
+  }
+
+  const models = getModels();
+  let idx = models.findIndex(m => m.title === title);
+  if (idx < 0) {
+    models.push({ title, count: 0 });
+    idx = models.length - 1;
+  }
+  const start = models[idx].count;
+  models[idx].count += qty;
+  saveModels(models);
+
+  const nfts = getNFTs();
+  for (let i = 0; i < qty; i++) {
+    const id = Date.now() + '_' + Math.random().toString(36).substring(2);
+    nfts[id] = {
+      id, title, image, price, rarity,
+      code: code(idx, start + i),
+      owner: 'admin',
+      forSale: false
+    };
+  }
+
+  saveNFTs(nfts);
+  renderHistory();
+  alert('✅ Выпущено ' + qty + ' NFT');
+}
+
+function renderHistory() {
+  const nfts = Object.values(getNFTs()).filter(n => n.owner === 'admin');
+  const container = document.getElementById('history');
+  container.innerHTML = nfts.map(n => `
+    <div class="nft-item">
+      <img src="${n.image}" alt="">
+      <div>
+        <b>${n.title}</b><br>
+        Код: ${n.code}<br>
+        Цена: ${n.price} ★<br>
+        Редкость: ${n.rarity}
+      </div>
+    </div>
   `).join('');
 }
 
 renderHistory();
 </script>
+
 </body>
 </html>
