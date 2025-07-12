@@ -1,72 +1,54 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>NFT Биржа</title>
-  <style>
-    body { margin:0; font-family:sans-serif; background:#eef4fb; color:#000; display:flex; flex-direction:column; min-height:100vh; }
-    header { background:#0077cc; color:#fff; padding:20px; text-align:center; font-size:28px; }
-    .main { flex:1; display:flex; flex-direction:column; align-items:center; padding:20px; }
-    .login-box, .profile-box { background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-width:320px; width:100%; margin-bottom:20px; }
-    .login-box input { width:100%; padding:12px; margin:8px 0; font-size:16px; border-radius:4px; border:1px solid #ccc; }
-    .login-box button, .profile-box button { width:100%; padding:14px; font-size:18px; border:none; border-radius:6px; background:#0077cc; color:#fff; cursor:pointer; margin-top:10px; }
-    .profile-box button.logout { background:#ff4444; margin-top:5px; }
-    .filters { display:none; gap:10px; margin-bottom:20px; }
-    .filters select { padding:8px; font-size:16px; border-radius:4px; border:1px solid #ccc; }
-    .container { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; }
-    .card { background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.15); width:240px; overflow:hidden; text-align:center; }
-    .card img { width:100%; height:140px; object-fit:cover; }
-    .card p { margin:8px; font-size:14px; }
-    .card button { margin:12px; padding:10px 16px; font-size:16px; border:none; border-radius:6px; background:#0077cc; color:#fff; cursor:pointer; }
-  </style>
-</head>
-<body>
-
-<header>NFT Биржа</header>
-
+<html lang="ru"><head><meta charset="UTF-8"><title>Биржа NFT</title>
+<style>
+body,html{margin:0;padding:0;height:100%;font-family:sans-serif;background:#eef4fb;}
+.header{background:#0077cc;color:#fff;padding:20px;text-align:center;font-size:28px;}
+.main{padding:20px; display:flex;flex-direction:column;align-items:center;}
+.login-box, .profile-box{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.1);max-width:320px;width:100%;margin-bottom:20px;}
+.login-box input{width:100%;padding:12px;margin:8px 0;border:1px solid #ccc;border-radius:4px;font-size:16px;}
+.login-box button, .profile-box button{width:100%;padding:14px;font-size:18px;border:none;border-radius:6px;color:#fff;cursor:pointer;}
+.login-box button{background:#0077cc;}
+.profile-box button.logout{background:#ff4444;margin-top:10px;}
+.filters{display:none;gap:10px;margin-bottom:20px;}
+.filters select{padding:8px;border:1px solid #ccc;border-radius:4px;font-size:16px;}
+.container{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;width:100%;}
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.15);width:240px;overflow:hidden;text-align:center;}
+.card img{width:100%;height:140px;object-fit:cover;}
+.card p{margin:8px;font-size:14px;}
+.card button{margin:12px;padding:10px 16px;font-size:16px;border:none;border-radius:6px;background:#0077cc;color:#fff;cursor:pointer;}
+</style></head><body>
+<div class="header">Биржа NFT</div>
 <div class="main">
   <div id="loginBox" class="login-box">
-    <h2>Войти / Зарегистрироваться</h2>
+    <h2>Вход / Регистрация</h2>
     <input id="login" placeholder="Логин">
     <input id="password" type="password" placeholder="Пароль">
-    <button onclick="loginUser()">Войти / Регистрация</button>
+    <button onclick="loginUser()">Войти / Зарегистрироваться</button>
   </div>
-
   <div id="profileBox" class="profile-box" style="display:none;">
     <h2>Привет, <span id="userName"></span>!</h2>
-    <p>Баланс: <span id="userBalance"></span> STAR</p>
+    <p>Баланс: <span id="userBalance"></span>★</p>
     <button class="logout" onclick="logoutUser()">Выйти</button>
   </div>
-
   <div id="filters" class="filters">
     <select id="sortPrice" onchange="renderNFTs()">
-      <option value="">— Сортировать —</option>
-      <option value="asc">Сначала дешёвые</option>
-      <option value="desc">Сначала дорогие</option>
+      <option value="">— Сортировка —</option>
+      <option value="asc">Дешёвые →</option>
+      <option value="desc">Дорогие →</option>
     </select>
     <select id="filterRarity" onchange="renderNFTs()">
       <option value="">— Редкость —</option>
-      <option value="0.01%">0.01%</option>
-      <option value="0.1%">0.1%</option>
-      <option value="0.5%">0.5%</option>
-      <option value="1%">1%</option>
-      <option value="2%">2%</option>
-      <option value="3%">3%</option>
-      <option value="4%">4%</option>
-      <option value="5%">5%</option>
-      <option value="tested">tested</option>
-      <option value="error">error</option>
+      <option value="0.01%">0.01%</option><option value="0.1%">0.1%</option><option value="0.5%">0.5%</option>
+      <option value="1%">1%</option><option value="2%">2%</option><option value="3%">3%</option><option value="4%">4%</option><option value="5%">5%</option><option value="tested">tested</option><option value="error">error</option>
     </select>
   </div>
-
-  <div id="nftContainer" class="container"></div>
+  <div class="container" id="nftContainer"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import { getDatabase, ref, get, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
-
-const app = initializeApp({
+const db = getDatabase(initializeApp({
   apiKey:"AIzaSyAAgeGGJAqYjQf0B8W_K7OX01aoriYeULo",
   authDomain:"nft-birga.firebaseapp.com",
   databaseURL:"https://nft-birga-default-rtdb.firebaseio.com",
@@ -75,52 +57,48 @@ const app = initializeApp({
   messagingSenderId:"387414090259",
   appId:"1:387414090259:web:8342f9a11174433dc895e6",
   measurementId:"G-2Q5WNT0VGQ"
-});
-const db = getDatabase(app);
+}));
 
-let currentUser = null;
-let nftData = {};
+let currentUser = null, nftData = {};
 
 async function loginUser(){
-  const l = document.getElementById("login").value.trim();
-  const p = document.getElementById("password").value.trim();
-  if(!l||!p){ alert("Введите оба поля"); return; }
+  const l=document.getElementById("login").value.trim();
+  const p=document.getElementById("password").value.trim();
+  if(!l||!p){ alert("Введите логин и пароль"); return; }
   const snap = await get(ref(db, "users/"+l));
   if(snap.exists() && snap.val().password !== p){ alert("Неверный пароль"); return; }
-  await set(ref(db, "users/"+l), { password:p, balance: snap.val()?.balance||0 });
-  currentUser = l;
-  showProfile();
+  await set(ref(db, "users/"+l), { password:p, balance:snap.val()?.balance||0 });
+  currentUser = l; showProfile();
 }
+
 async function showProfile(){
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("profileBox").style.display = "block";
-  document.getElementById("filters").style.display = "flex";
-  const u = await get(ref(db, "users/"+currentUser));
-  document.getElementById("userName").textContent = currentUser;
-  document.getElementById("userBalance").textContent = u.val().balance;
+  document.getElementById("loginBox").style.display="none";
+  document.getElementById("profileBox").style.display="block";
+  document.getElementById("filters").style.display="flex";
+  const u=await get(ref(db, "users/"+currentUser));
+  document.getElementById("userName").textContent=currentUser;
+  document.getElementById("userBalance").textContent=u.val().balance;
   renderNFTs();
 }
+
 function logoutUser(){
-  currentUser = null;
-  document.getElementById("profileBox").style.display = "none";
-  document.getElementById("filters").style.display = "none";
-  document.getElementById("loginBox").style.display = "block";
+  currentUser=null;
+  document.getElementById("profileBox").style.display="none";
+  document.getElementById("filters").style.display="none";
+  document.getElementById("loginBox").style.display="block";
 }
 
 function renderNFTs(){
   const arr = Object.entries(nftData).map(([k,v])=>({key:k,...v}));
-  let list = arr.filter(n=>!document.getElementById("filterRarity").value || n.rarity===document.getElementById("filterRarity").value);
-  if(document.getElementById("sortPrice").value){
-    list.sort((a,b)=>document.getElementById("sortPrice").value === "asc" ? a.price-b.price : b.price-a.price);
-  }
+  const fr=document.getElementById("filterRarity").value;
+  const sp=document.getElementById("sortPrice").value;
+  let list = arr.filter(n=>!fr||n.rarity===fr);
+  if(sp) list.sort((a,b)=> sp==="asc"?a.price-b.price:b.price-a.price);
   document.getElementById("nftContainer").innerHTML = list.map(n=>`
-    <div class="card">
-      <img src="${n.image}">
-      <p><b>${n.title}</b></p>
-      <p>Редкость: ${n.rarity}</p>
-      <p>${n.price} STAR</p>
-      ${(n.owner===currentUser && !n.forSale) ? `<button onclick="sellNFT('${n.key}')">Продать</button>` :
-        (n.forSale && n.owner!==currentUser) ? `<button onclick="buyNFT('${n.key}',${n.price})">Купить</button>` : ""}
+    <div class="card"><img src="${n.image}">
+      <p><b>${n.title}</b></p><p>${n.code}</p><p>${n.price}★ • ${n.rarity}</p>
+      ${(n.owner===currentUser && !n.forSale)?`<button onclick="sellNFT('${n.key}')">Продать</button>`:
+       (n.forSale && n.owner!==currentUser)?`<button onclick="buyNFT('${n.key}',${n.price})">Купить</button>`:""}
     </div>`).join("");
 }
 
@@ -130,26 +108,26 @@ async function sellNFT(k){
   await update(ref(db, "nfts/"+k), { price:p, forSale:true });
   renderNFTs();
 }
-async function buyNFT(k, price){
-  const us = await get(ref(db, "users/"+currentUser));
-  const nf = await get(ref(db, "nfts/"+k));
+
+async function buyNFT(k,price){
+  const us=await get(ref(db, "users/"+currentUser));
   if(us.val().balance < price){ alert("Недостаточно средств"); return; }
-  const seller = nf.val().owner;
-  const sellerSnap = await get(ref(db, "users/"+seller));
-  await update(ref(db, "users/"+currentUser), { balance: us.val().balance-price });
-  await update(ref(db, "users/"+seller), { balance: (sellerSnap.val()?.balance||0) + price });
+  const nf=await get(ref(db, "nfts/"+k));
+  const seller=nf.val().owner;
+  const ss=await get(ref(db, "users/"+seller));
+  await update(ref(db, "users/"+currentUser), { balance:us.val().balance-price });
+  await update(ref(db, "users/"+seller), { balance:(ss.val()?.balance||0)+price });
   await update(ref(db, "nfts/"+k), { owner:currentUser, forSale:false });
   showProfile();
 }
 
-onValue(ref(db, "nfts"), snap=>{ nftData = snap.val()||{}; if(currentUser) renderNFTs(); });
+onValue(ref(db, "nfts"),snap=>{ nftData=snap.val()||{}; if(currentUser) renderNFTs(); });
 
-window.loginUser = loginUser;
-window.logoutUser = logoutUser;
-window.sellNFT = sellNFT;
-window.buyNFT = buyNFT;
+window.loginUser=loginUser;
+window.logoutUser=logoutUser;
+window.sellNFT=sellNFT;
+window.buyNFT=buyNFT;
 </script>
+</body></html>
 
-</body>
-</html>
 
