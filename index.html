@@ -15,7 +15,7 @@
     #loginBox { max-width: 320px; margin: 50px auto; text-align: center; }
     #loginBox input { width: 100%; padding: 10px; margin: 8px 0; font-size: 18px; box-sizing: border-box; }
     #loginBox button { width: 100%; padding: 12px; font-size: 20px; font-weight: bold; }
-    #filters { max-width: 600px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px #aaa; }
+    #filters { max-width: 600px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px #aaa; display: none; }
     #filters label { margin-right: 15px; font-weight: bold; }
     #filters select { padding: 6px; margin-right: 20px; font-size: 16px; }
     #chatSection { max-width: 600px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px #aaa; display: none; }
@@ -27,6 +27,7 @@
     #profileSection { max-width: 600px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 8px #aaa; display: none; }
     #profileSection h2 { margin-top: 0; }
     #logoutBtn { margin-top: 15px; padding: 10px 20px; font-size: 18px; background: #cc3300; border: none; color: white; cursor: pointer; border-radius: 6px; }
+    .input-price-sale { width: 70px; margin-top: 5px; padding: 4px; }
   </style>
 </head>
 <body>
@@ -42,7 +43,7 @@
   <button onclick="loginUser()">Войти / Регистрация</button>
 </div>
 
-<div id="filters" style="display:none;">
+<div id="filters">
   <label for="priceSort">Сортировка по цене:</label>
   <select id="priceSort" onchange="renderNFTs()">
     <option value="none">Без сортировки</option>
@@ -93,23 +94,19 @@
 <script>
   let currentUser = null;
 
-  // Загрузка пользователей
+  // Storage utils
   function getUsers() {
     return JSON.parse(localStorage.getItem('users')) || {};
   }
   function setUsers(users) {
     localStorage.setItem('users', JSON.stringify(users));
   }
-
-  // Загрузка NFT
   function getNFTs() {
     return JSON.parse(localStorage.getItem('nfts')) || {};
   }
   function setNFTs(nfts) {
     localStorage.setItem('nfts', JSON.stringify(nfts));
   }
-
-  // Загрузка сообщений чата
   function getMessages() {
     return JSON.parse(localStorage.getItem('messages')) || [];
   }
@@ -117,6 +114,7 @@
     localStorage.setItem('messages', JSON.stringify(msgs));
   }
 
+  // Login/registration
   function loginUser() {
     const login = document.getElementById('login').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -166,13 +164,14 @@
     const users = getUsers();
     if (!currentUser || !users[currentUser]) return;
     const user = users[currentUser];
-    document.getElementById('userInfo').textContent = `Пользователь: ${currentUser} | Баланс: ${user.balance} STAR`;
+    document.getElementById('userInfo').textContent = `Пользователь: ${currentUser} | Баланс: ${user.balance.toFixed(2)} STAR`;
   }
 
+  // Отрисовка NFT для покупки
   function renderNFTs() {
     const nftsObj = getNFTs();
-    let nfts = Object.values(nftsObj).filter(nft => nft.forSale !== false); // Показывать только для продажи
-    if (!nfts.length) nfts = Object.values(nftsObj); // Если нет для продажи, показать все
+    let nfts = Object.values(nftsObj).filter(nft => nft.forSale === true);
+    if (!nfts.length) nfts = Object.values(nftsObj);
 
     // Фильтры
     const priceSort = document.getElementById('priceSort').value;
@@ -205,6 +204,7 @@
     `).join('');
   }
 
+  // Покупка NFT
   function buyNFT(id) {
     if (!currentUser) {
       alert('Войдите в аккаунт чтобы купить NFT');
@@ -230,6 +230,7 @@
     alert('Покупка успешна!');
   }
 
+  // Профиль с возможностью выставлять NFT на продажу
   function renderProfile() {
     if (!currentUser) return;
     const users = getUsers();
@@ -245,14 +246,50 @@
       return;
     }
     container.innerHTML = userNFTs.map(nft => `
-      <div class="card" style="width: 120px;">
+      <div class="card" style="width: 160px;">
         <img src="${nft.image}" alt="${nft.title}" />
         <b>${nft.title}</b><br/>
         Код: <code>${nft.code}</code><br/>
         Цена: ${nft.price} STAR<br/>
-        Редкость: ${nft.rarity}
+        Редкость: ${nft.rarity}<br/>
+        <div>
+          ${nft.forSale ? `
+            <button onclick="cancelSale('${nft.id}')">Снять с продажи</button>
+          ` : `
+            <input type="number" id="salePrice_${nft.id}" class="input-price-sale" placeholder="Цена" min="0.01" step="0.01" />
+            <button onclick="startSale('${nft.id}')">Выставить на продажу</button>
+          `}
+        </div>
       </div>
     `).join('');
+  }
+
+  // Начать продажу NFT
+  function startSale(nftId) {
+    const priceInput = document.getElementById(`salePrice_${nftId}`);
+    if (!priceInput) return;
+    const price = parseFloat(priceInput.value);
+    if (isNaN(price) || price <= 0) {
+      alert('Введите корректную цену больше 0');
+      return;
+    }
+    const nfts = getNFTs();
+    if (!nfts[nftId]) return alert('NFT не найден');
+    nfts[nftId].price = price;
+    nfts[nftId].forSale = true;
+    setNFTs(nfts);
+    renderNFTs();
+    renderProfile();
+  }
+
+  // Снять NFT с продажи
+  function cancelSale(nftId) {
+    const nfts = getNFTs();
+    if (!nfts[nftId]) return alert('NFT не найден');
+    nfts[nftId].forSale = false;
+    setNFTs(nfts);
+    renderNFTs();
+    renderProfile();
   }
 
   // --- Чат ---
@@ -306,7 +343,6 @@
   }
 
   document.getElementById('chatUserSelect').addEventListener('change', renderChatMessages);
-
 </script>
 
 </body>
