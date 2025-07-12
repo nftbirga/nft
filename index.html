@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
+<title>Биржа NFT</title>
+<style>
+body{font-family:sans-serif;background:#eef4fb;padding:0;margin:0}
+header{background:#0077cc;color:#fff;padding:15px;text-align:center}
+nav{display:flex;justify-content:space-between;background:#fff;padding:5px 20px}
+button{cursor:pointer;background:#0077cc;color:#fff;border:none;padding:8px;border-radius:4px}
+button:hover{background:#005fa3}
+.container{display:flex;flex-wrap:wrap;gap:10px;padding:20px;justify-content:center}
+.card{background:#fff;padding:10px;border-radius:8px;box-shadow:0 0 5px #aaa;width:200px;text-align:center}
+#profilePopup{display:none;position:fixed;top:60px;right:20px;background:#fff;padding:10px;border:1px solid #aaa;border-radius:8px;max-width:200px;max-height:70vh;overflow:auto}
+#loginBox{display:flex;flex-direction:column;align-items:center;padding:20px}
+#filters{display:flex;gap:10px,margin:10px;justify-content:center;padding:0 20px}
+</style></head><body>
+<header><h1>Биржа NFT</h1></header>
+<nav>
+  <div><button onclick="toggleProfile()">Профиль</button><button onclick="logoutUser()">Выйти</button></div>
+  <div id="userInfo">Не авторизован</div>
+  <button onclick="showLogin()">Войти</button>
+</nav>
+
+<div id="loginBox" style="display:none"><input id="login" placeholder="Логин"><input type="password" id="password" placeholder="Пароль"><button onclick="loginUser()">ОК</button></div>
+
+<div id="filters" style="display:none"><select id="sortPrice" onchange="renderNFTs()"><option value="">Цена</option><option value="asc">По возр.</option><option value="desc">По убыв.</option></select><select id="filterRarity" onchange="renderNFTs()"><option>Все</option><option value="0.01%">0.01%</option><option value="0.1%">0.1%</option><option value="1%">1%</option><option value="2%">2%</option><option value="3%">3%</option><option value="5%">5%</option><option value="tested">tested</option><option value="error">error</option></select></div>
+
+<div class="container" id="nftContainer"></div>
+<div id="profilePopup"></div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getDatabase,ref,get,set,onValue,update}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+const db=getDatabase(initializeApp({apiKey:"...",authDomain:"...",databaseURL:"...default-rtdb.firebaseio.com",projectId:"nft-birga",storageBucket:"...",messagingSenderId:"...",appId:"...",measurementId:"..."}));
+let user=null,nfts={};
+const ui={info:document.getElementById("userInfo"),loginBox:document.getElementById("loginBox"),filters:document.getElementById("filters"),container:document.getElementById("nftContainer"),popup:document.getElementById("profilePopup")};
+function showLogin(){ui.loginBox.style.display="flex";}
+async function loginUser(){
+  const l=document.getElementById("login").value,p=document.getElementById("password").value;
+  if(!l||!p)return alert("Заполните");
+  const sr=await get(ref(db,"users/"+l));
+  const u=sr.val();
+  if(u&&u.password!==p)return alert("Неверно");
+  await set(ref(db,"users/"+l),{password:p,balance:u?u.balance:0});
+  user=l;ui.loginBox.style.display="none";ui.filters.style.display="flex";updateInfo();renderNFTs();
+}
+async function updateInfo(){
+  const snap=await get(ref(db,"users/"+user));
+  ui.info.textContent=`${user} | ${snap.val().balance} STAR`;
+}
+function logoutUser(){user=null;ui.filters.style.display="none";ui.info.textContent="Не авторизован";ui.popup.style.display="none";}
+function toggleProfile(){
+  if(!user){alert("Для начала войдите");return;}
+  ui.popup.innerHTML="<h4>Ваши NFT</h4>"+Object.values(nfts).filter(n=>n.owner===user).map(n=>`<div>${n.title} (${n.code})</div>`).join("");
+  ui.popup.style.display=ui.popup.style.display==="block"?"none":"block";
+}
+function renderNFTs(){
+  const data=Object.entries(nfts).map(([k,v])=>({...v,key:k}));
+  let arr=data;
+  const sp=document.getElementById("sortPrice").value;
+  if(sp)arr.sort((a,b)=>sp==="asc"?a.price-b.price:b.price-a.price);
+  const fr=document.getElementById("filterRarity").value;
+  if(fr)arr=arr.filter(n=>n.rarity===fr);
+  ui.container.innerHTML=arr.map(n=>`<div class="card"><img src="${n.image}"><h3>${n.title}</h3><p>${n.rarity}</p><p>${n.price} STAR</p>${n.owner===user&&!n.forSale?`<button onclick="sell('${n.key}')">Продать</button>`:n.forSale&&n.owner!==user?`<button onclick="buy('${n.key}',${n.price})">Купить</button>`:""}</div>`).join("");
+}
+async function sell(k){
+  const pr=Number(prompt("Введите цену"));
+  if(isNaN(pr))return;
+  await update(ref(db,"nfts/"+k),{price:pr,forSale:true});renderNFTs();
+}
+async function buy(k,pr){
+  const ur=await get(ref(db,"users/"+user));
+  if(ur.val().balance<pr)return alert("Недостаточно");
+  const nf=await get(ref(db,"nfts/"+k));
+  const o=nf.val().owner;
+  const or=await get(ref(db,"users/"+o));
+  await update(ref(db,"users/"+user),{balance:ur.val().balance-pr});
+  await update(ref(db,"users/"+o),{balance:(or.val()?.balance||0)+pr});
+  await update(ref(db,"nfts/"+k),{owner:user,forSale:false});
+  updateInfo();renderNFTs();
+}
+onValue(ref(db,"nfts"),s=>{nfts=s.val()||{};if(user)renderNFTs();});
+window.loginUser=loginUser;window.logoutUser=logoutUser;window.toggleProfile=toggleProfile;
+window.sell=sell;window.buy=buy;
+</script>
+
+</body></html>
