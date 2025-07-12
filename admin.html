@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Админка NFT</title>
+  <style>
+    body { font-family: sans-serif; background: #eef4fb; padding: 20px; color: #000; }
+    h1, h2 { color: #000; }
+    input, select, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    .nft { background: #fff; border-radius: 8px; padding: 10px; margin-top: 10px; box-shadow: 0 0 5px #aaa; }
+    img { max-width: 100%; }
+    button.del { background: #ff4444; }
+  </style>
+</head>
+<body>
+
+<h1>Админка: создать NFT-модель</h1>
+
+<input id="title" placeholder="Название модели">
+<input id="image" placeholder="URL изображения">
+<input id="price" placeholder="Цена по умолчанию (STAR)">
+<select id="rarity">
+  <option>Выбери редкость</option>
+  <option value="0.01%">0.01%</option>
+  <option value="0.1%">0.1%</option>
+  <option value="0.5%">0.5%</option>
+  <option value="1%">1%</option>
+  <option value="2%">2%</option>
+  <option value="3%">3%</option>
+  <option value="4%">4%</option>
+  <option value="5%">5%</option>
+  <option value="tested">tested</option>
+  <option value="error">error</option>
+</select>
+<input id="quantity" type="number" placeholder="Сколько NFT выпустить">
+<button onclick="createModel()">Создать NFT</button>
+
+<h2>Пополнить пользователю баланс</h2>
+<input id="userLogin" placeholder="Логин пользователя">
+<input id="amountToAdd" placeholder="Сколько STAR пополнить">
+<button onclick="addBalance()">Пополнить</button>
+
+<h2>История NFT, выпущенных админом</h2>
+<div id="history"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getDatabase, ref, get, set, push, update, onValue, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAAgeGGJAqYjQf0B8W_K7OX01aoriYeULo",
+    authDomain: "nft-birga.firebaseapp.com",
+    databaseURL: "https://nft-birga-default-rtdb.firebaseio.com",
+    projectId: "nft-birga",
+    storageBucket: "nft-birga.appspot.com",
+    messagingSenderId: "387414090259",
+    appId: "1:387414090259:web:8342f9a11174433dc895e6",
+    measurementId: "G-2Q5WNT0VGQ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  function getLetterCode(index) {
+    const a = 97 + (index % 26);
+    const b = 97 + Math.floor(index / 26);
+    return String.fromCharCode(a) + String.fromCharCode(b);
+  }
+
+  async function createModel() {
+    const title = titleInput.value.trim();
+    const image = imageInput.value.trim();
+    const price = Number(priceInput.value.trim());
+    const rarity = rarityInput.value;
+    const quantity = parseInt(quantityInput.value);
+
+    if (!title || !image || !price || !rarity || !quantity || quantity <= 0) {
+      alert('Заполните все поля');
+      return;
+    }
+
+    // Получаем список существующих моделей
+    const modelSnap = await get(ref(db, 'models'));
+    const models = modelSnap.val() || {};
+    const modelKeys = Object.keys(models);
+    let modelIndex = modelKeys.length;
+
+    // Проверка: если такая модель уже была, использовать её индекс
+    const existingKey = modelKeys.find(k => models[k].title === title);
+    if (existingKey) {
+      modelIndex = parseInt(existingKey);
+    }
+
+    // Сохраняем модель
+    await set(ref(db, `models/${modelIndex}`), {
+      title, image, price, rarity, system: "extem beta"
+    });
+
+    // Выпускаем NFT
+    for (let i = 0; i < quantity; i++) {
+      const code = String(i + 1).padStart(12, '0') + getLetterCode(modelIndex);
+      const nftRef = push(ref(db, 'nfts'));
+      await set(nftRef, {
+        title, image, price, rarity, system: "extem beta",
+        code, owner: "admin", forSale: false
+      });
+    }
+
+    renderHistory();
+  }
+
+  async function addBalance() {
+    const login = document.getElementById('userLogin').value.trim();
+    const amount = parseInt(document.getElementById('amountToAdd').value.trim());
+    if (!login || isNaN(amount)) {
+      alert("Введите логин и сумму");
+      return;
+    }
+
+    const userRef = ref(db, 'users/' + login);
+    const snap = await get(userRef);
+    const user = snap.val() || { password: "", balance: 0 };
+
+    user.balance += amount;
+    await set(userRef, user);
+
+    alert(`Пользователю ${login} начислено ${amount} STAR`);
+  }
+
+  async function renderHistory() {
+    const div = document.getElementById('history');
+    const snap = await get(ref(db, 'nfts'));
+    const data = snap.val() || {};
+    const list = Object.entries(data).filter(([_, n]) => n.owner === 'admin');
+
+    div.innerHTML = list.map(([key, nft]) => `
+      <div class="nft">
+        <img src="${nft.image}">
+        <h3>${nft.title}</h3>
+        <p>Код: ${nft.code}</p>
+        <p>Цена: ${nft.price} STAR</p>
+        <p>Редкость: ${nft.rarity}</p>
+        <button class="del" onclick="deleteNFT('${key}')">Удалить</button>
+      </div>
+    `).join('');
+  }
+
+  // Глобальная функция удаления
+  window.deleteNFT = async function(key) {
+    if (confirm("Удалить NFT из базы?")) {
+      await remove(ref(db, 'nfts/' + key));
+      renderHistory();
+    }
+  };
+
+  renderHistory();
+</script>
+
+</body>
+</html>
