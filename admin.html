@@ -4,31 +4,26 @@
   <meta charset="UTF-8">
   <title>Админка NFT</title>
   <style>
-    body { font-family: sans-serif; background: #eef4fb; padding: 20px; color: #000; }
-    .header { display: flex; justify-content: space-between; align-items: center; }
-    input, select, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-    .nft { background: #fff; border-radius: 8px; padding: 10px; margin-top: 10px; box-shadow: 0 0 5px #aaa; }
-    button.del { background: #ff4444; color: #fff; }
+    body { font-family:sans-serif; background:#eef4fb; padding:20px; }
+    .form { max-width:400px; background:#fff; padding:20px; margin-bottom:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    .form input, .form select, .form button { width:100%; padding:12px; margin:8px 0; border-radius:4px; border:1px solid #ccc; }
+    .form button { background:#0077cc; color:#fff; border:none; font-size:16px; cursor:pointer; }
+    .history .nft { background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.15); padding:12px; margin-bottom:10px; display:flex; align-items:center; }
+    .history img { width:60px; height:60px; object-fit:cover; margin-right:12px; border-radius:4px; }
+    .history button { margin-left:auto; background:#ff4444; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>Админка NFT</h1>
-  <button onclick="logout()">Выйти</button>
-</div>
+<h1>Админка NFT</h1>
 
-<input id="adminLogin" placeholder="Логин"><br>
-<input id="adminPass" placeholder="Пароль" type="password"><br>
-<button onclick="loginAdmin()">Войти</button>
-
-<div id="mainPanel" style="display:none">
-  <h2>Создать NFT-модель</h2>
+<div class="form">
+  <h2>Создать NFT</h2>
   <input id="title" placeholder="Название модели">
   <input id="image" placeholder="URL изображения">
-  <input id="price" placeholder="Цена (STAR)">
+  <input id="price" placeholder="Цена в STAR" type="number">
   <select id="rarity">
-    <option value="">Редкость</option>
+    <option value="">— Выберите редкость —</option>
     <option value="0.01%">0.01%</option>
     <option value="0.1%">0.1%</option>
     <option value="0.5%">0.5%</option>
@@ -41,102 +36,61 @@
     <option value="error">error</option>
   </select>
   <input id="quantity" type="number" placeholder="Количество">
-  <button onclick="createModel()">Создать</button>
-
-  <h2>Пополнить баланс</h2>
-  <input id="userLogin" placeholder="Логин пользователя">
-  <input id="amountToAdd" placeholder="Сколько STAR">
-  <button onclick="addBalance()">Пополнить</button>
-
-  <h2>История NFT</h2>
-  <div id="history"></div>
+  <button onclick="createNFT()">Создать NFT</button>
 </div>
 
+<div class="history" id="history"></div>
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getDatabase, ref, get, set, push, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getDatabase, ref, get, set, push, remove } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
-  const app = initializeApp({
-    apiKey: "...",
-    authDomain: "...",
-    databaseURL: "...default-rtdb.firebaseio.com",
-    projectId: "nft-birga",
-    storageBucket: "...",
-    messagingSenderId: "...",
-    appId: "...",
-    measurementId: "..."
-  });
-  const db = getDatabase(app);
-  let adminLogged = false;
+const db = getDatabase(initializeApp({
+  apiKey:"AIzaSyAAgeGGJAqYjQf0B8W_K7OX01aoriYeULo",
+  authDomain:"nft-birga.firebaseapp.com",
+  databaseURL:"https://nft-birga-default-rtdb.firebaseio.com",
+  projectId:"nft-birga",
+  storageBucket:"nft-birga.appspot.com",
+  messagingSenderId:"387414090259",
+  appId:"1:387414090259:web:8342f9a11174433dc895e6",
+  measurementId:"G-2Q5WNT0VGQ"
+}));
 
-  function logout(){
-    adminLogged = false;
-    document.getElementById("mainPanel").style.display = "none";
+function letterCode(idx){
+  return String.fromCharCode(97 + (idx % 26)) + String.fromCharCode(97 + Math.floor(idx/26));
+}
+
+async function createNFT(){
+  const t = document.getElementById("title").value.trim();
+  const im = document.getElementById("image").value.trim();
+  const pr = Number(document.getElementById("price").value.trim());
+  const r = document.getElementById("rarity").value;
+  const q = Number(document.getElementById("quantity").value);
+  if(!t||!im||!pr||!r||!q){ alert("Заполните все поля"); return;}
+  for(let i=0;i<q;i++){
+    const code = String(i+1).padStart(12,'0') + letterCode(Date.now()+i);
+    await set(push(ref(db,"nfts")), { title:t, image:im, price:pr, rarity:r, code, owner:"admin", forSale:false });
   }
+  showHistory();
+}
 
-  async function loginAdmin(){
-    const login = document.getElementById("adminLogin").value;
-    const pass = document.getElementById("adminPass").value;
-    if(login==="admin" && pass==="admin"){ // упрощённо
-      adminLogged = true;
-      document.getElementById("mainPanel").style.display = "block";
-      renderHistory();
-    } else {
-      alert("Неверные данные");
-    }
-  }
+async function showHistory(){
+  const snap = await get(ref(db,"nfts"));
+  const arr = Object.entries(snap.val()||{}).filter(([_,v])=>v.owner==="admin");
+  document.getElementById("history").innerHTML = arr.map(([k,v])=>`
+    <div class="nft">
+      <img src="${v.image}">
+      <div>${v.title} (${v.code})<br>${v.price} STAR • ${v.rarity}</div>
+      <button onclick="deleteNFT('${k}')">Удалить</button>
+    </div>`).join("");
+}
 
-  function getLetterCode(i){
-    const a = 97 + (i % 26), b = 97 + Math.floor(i/26);
-    return String.fromCharCode(a)+String.fromCharCode(b);
-  }
+window.createNFT = createNFT;
+window.deleteNFT = async k => { await remove(ref(db,"nfts/"+k)); showHistory(); };
 
-  async function createModel(){
-    if(!adminLogged){alert("Войдите как админ");return;}
-    const t=document.getElementById("title"),i=document.getElementById("image"),
-      p=document.getElementById("price"), r=document.getElementById("rarity"),
-      q=document.getElementById("quantity");
-    if(!t.value||!i.value||!p.value||!r.value||+q.value<=0){alert("Заполните поля");return;}
-    for(let k=0;k<+q.value;k++){const idx=k+1;
-      const code=String(idx).padStart(12,'0')+getLetterCode(Date.now()%100);
-      await set(push(ref(db,'nfts')),{
-        title:t.value, image:i.value, price:+p.value,
-        rarity:r.value, code, owner:"admin", forSale:false
-      });
-    }
-    renderHistory();
-  }
-
-  async function addBalance(){
-    if(!adminLogged){alert("Войдите как админ");return;}
-    const lg=document.getElementById("userLogin").value;
-    const amt=+document.getElementById("amountToAdd").value;
-    if(!lg||isNaN(amt)){alert("Введите данные");return;}
-    const sr=await get(ref(db,'users/'+lg));
-    const u=sr.val()||{balance:0,password:""};
-    u.balance+=amt;
-    await set(ref(db,'users/'+lg),u);
-    alert("Баланс обновлён");
-  }
-
-  async function renderHistory(){
-    const snap=await get(ref(db,'nfts'));
-    const arr=Object.entries(snap.val()||{}).filter(([_k,v])=>v.owner==="admin");
-    document.getElementById("history").innerHTML=arr.map(([k,v])=>`
-      <div class="nft">
-        <img src="${v.image}">
-        <p>${v.title} (${v.code}) • ${v.price} STAR • ${v.rarity}</p>
-        <button class="del" onclick="deleteNFT('${k}')">Удалить</button>
-      </div>
-    `).join("");
-  }
-
-  window.createModel=createModel;
-  window.addBalance=addBalance;
-  window.deleteNFT=async(k)=>{
-    if(!adminLogged) return; await remove(ref(db,'nfts/'+k)); renderHistory();
-  };
-
+showHistory();
 </script>
+
 </body>
 </html>
+
