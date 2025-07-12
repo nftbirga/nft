@@ -2,100 +2,189 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Биржа NFT</title>
+  <title>NFT Биржа</title>
   <style>
-    body { margin:0; font-family: Arial, sans-serif; background: #e6f0fa; color: #000; }
+    body {
+      background: #e6f0fa;
+      font-family: sans-serif;
+      color: #000;
+      margin: 0;
+      padding: 0 10px 60px; /* снизу отступ чтобы не перекрыл телеграм */
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
     header {
-      background: #0077cc; color: #fff; padding: 15px; text-align: center;
-      font-size: 24px; font-weight: bold;
+      background: #0077cc;
+      color: #fff;
+      padding: 15px 0;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      position: relative;
     }
     #profileBtn {
-      position: fixed; top: 15px; left: 15px;
-      padding: 10px 20px; font-size: 16px;
-      background: #005fa3; color: white; border: none; border-radius: 5px; cursor: pointer;
+      position: fixed;
+      top: 20px;
+      left: 15px;
+      padding: 10px 18px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background-color: #005fa3;
+      color: white;
+      cursor: pointer;
+      display: none;
+      z-index: 1100;
+      user-select: none;
     }
-    #profileBtn:hover { background: #00447a; }
+    #userBalance {
+      position: fixed;
+      top: 20px;
+      right: 15px;
+      font-weight: bold;
+      font-size: 18px;
+      color: black;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      z-index: 1100;
+      display: none;
+      user-select: none;
+    }
     #profilePanel {
-      display: none; position: fixed; top: 60px; left: 15px;
-      width: 320px; max-height: 80vh; overflow-y: auto;
-      background: white; border-radius: 10px; padding: 15px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
-      z-index: 1000;
+      position: fixed;
+      top: 60px;
+      left: 15px;
+      max-width: 350px;
+      max-height: 70vh;
+      overflow-y: auto;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 1100;
+      font-size: 14px;
     }
-    #profilePanel h2 { margin-top: 0; }
-    #profilePanel button {
-      margin-top: 15px; width: 100%; padding: 10px; font-size: 16px;
-      background: #c33; color: white; border: none; border-radius: 5px; cursor: pointer;
+    #profilePanel .card {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 5px;
+      margin-bottom: 10px;
+      text-align: center;
+      width: 150px;
+      display: inline-block;
+      vertical-align: top;
+      margin-right: 10px;
     }
-    #profilePanel button:hover { background: #a22; }
-
+    #profilePanel .card img {
+      width: 100%;
+      border-radius: 6px;
+    }
     #loginSection {
-      max-width: 320px; margin: 100px auto; padding: 20px;
-      background: white; border-radius: 10px; box-shadow: 0 0 10px #aaa;
+      max-width: 320px;
+      margin: 80px auto 20px;
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #bbb;
       text-align: center;
     }
     #loginSection input {
-      width: 100%; padding: 10px; margin: 10px 0; font-size: 16px;
-      border: 1px solid #aaa; border-radius: 5px;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
     }
     #loginSection button {
-      width: 100%; padding: 12px; background: #0077cc; color: white; border: none;
-      font-size: 18px; border-radius: 5px; cursor: pointer;
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 15px;
+      user-select: none;
     }
     #loginSection button:hover {
       background: #005fa3;
     }
-
     #container {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;
-      padding: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
     }
     .card {
-      background: white; width: 200px; border-radius: 10px;
-      box-shadow: 0 0 7px #aaa; padding: 10px; text-align: center;
-      display: flex; flex-direction: column; align-items: center;
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      width: 200px;
+      box-shadow: 0 0 5px #aaa;
+      text-align: center;
+      user-select: none;
+      position: relative;
     }
     .card img {
-      max-width: 100%; border-radius: 8px; margin-bottom: 10px;
+      width: 100%;
+      border-radius: 6px;
+      height: 140px;
+      object-fit: cover;
     }
     .card button {
-      margin-top: auto; padding: 8px 10px; width: 100%;
-      background: #0077cc; color: white; border: none; border-radius: 6px;
-      font-weight: bold; cursor: pointer;
+      margin-top: 8px;
+      width: 90%;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      background: #0077cc;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: none;
     }
-    .card button:hover { background: #005fa3; }
-
-    #userNFTs {
-      display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
-      margin-top: 15px;
+    .card button:hover {
+      background: #005fa3;
     }
-    #userNFTs .card {
-      width: 150px;
-    }
-
-    /* Telegram logo bottom */
     #telegramLink {
       position: fixed;
-      bottom: 0; left: 0; width: 100%; background: #0088cc;
-      text-align: center; padding: 10px 0;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #0088cc;
+      text-align: center;
+      padding: 10px 0;
+      z-index: 1000;
     }
     #telegramLink img {
-      height: 40px; cursor: pointer;
+      height: 40px;
+      cursor: pointer;
+      vertical-align: middle;
     }
   </style>
 </head>
 <body>
 
-<header>NFT Биржа</header>
+<header>
+  NFT Биржа
+</header>
 
-<button id="profileBtn" style="display:none;">Профиль</button>
+<button id="profileBtn">Профиль</button>
+<div id="userBalance"></div>
 
 <div id="profilePanel"></div>
 
 <div id="loginSection">
-  <input id="login" placeholder="Логин" autocomplete="username" />
-  <input id="password" type="password" placeholder="Пароль" autocomplete="current-password" />
-  <button id="btnLogin">Войти / Зарегистрироваться</button>
+  <input id="loginInput" placeholder="Логин" autocomplete="username" />
+  <input id="passwordInput" type="password" placeholder="Пароль" autocomplete="current-password" />
+  <button id="loginBtn">Войти / Регистрация</button>
 </div>
 
 <div id="container" style="display:none;"></div>
@@ -108,7 +197,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getDatabase, ref, get, set, child, update } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+  import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAAgeGGJAqYjQf0B8W_K7OX01aoriYeULo",
@@ -125,16 +214,17 @@
   const db = getDatabase(app);
 
   const loginSection = document.getElementById('loginSection');
-  const loginInput = document.getElementById('login');
-  const passwordInput = document.getElementById('password');
-  const btnLogin = document.getElementById('btnLogin');
-  const container = document.getElementById('container');
+  const loginInput = document.getElementById('loginInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const loginBtn = document.getElementById('loginBtn');
   const profileBtn = document.getElementById('profileBtn');
+  const userBalanceDiv = document.getElementById('userBalance');
   const profilePanel = document.getElementById('profilePanel');
+  const container = document.getElementById('container');
 
   let currentUser = null;
 
-  btnLogin.onclick = async () => {
+  loginBtn.onclick = async () => {
     const login = loginInput.value.trim();
     const password = passwordInput.value.trim();
     if (!login || !password) {
@@ -144,25 +234,31 @@
 
     try {
       const userRef = ref(db, 'users/' + login);
-      const userSnap = await get(userRef);
-      if (!userSnap.exists()) {
-        // Создать пользователя
+      const snapshot = await get(userRef);
+
+      if (!snapshot.exists()) {
+        // Регистрация
         await set(userRef, { password, balance: 0 });
+        alert('Регистрация успешна');
       } else {
-        const userData = userSnap.val();
+        // Проверка пароля
+        const userData = snapshot.val();
         if (userData.password !== password) {
           alert('Неверный пароль');
           return;
         }
       }
+
       currentUser = login;
       loginSection.style.display = 'none';
       profileBtn.style.display = 'block';
+      userBalanceDiv.style.display = 'block';
       container.style.display = 'flex';
+
       await loadNFTs();
       showProfile();
     } catch (e) {
-      alert('Ошибка при авторизации');
+      alert('Ошибка при входе');
       console.error(e);
     }
   };
@@ -181,7 +277,9 @@
     try {
       const nftsSnap = await get(ref(db, 'nfts'));
       const nfts = nftsSnap.val() || {};
+
       container.innerHTML = '';
+
       Object.entries(nfts).forEach(([key, nft]) => {
         const card = document.createElement('div');
         card.className = 'card';
@@ -295,6 +393,7 @@
   async function showProfile() {
     if (!currentUser) {
       profilePanel.innerHTML = '<p>Пожалуйста, войдите в аккаунт</p>';
+      userBalanceDiv.style.display = 'none';
       return;
     }
     profilePanel.innerHTML = '<h2>Профиль: ' + currentUser + '</h2>';
@@ -303,11 +402,16 @@
       const userSnap = await get(ref(db, 'users/' + currentUser));
       if (!userSnap.exists()) {
         profilePanel.innerHTML += '<p>Пользователь не найден</p>';
+        userBalanceDiv.style.display = 'none';
         return;
       }
       const user = userSnap.val();
 
       profilePanel.innerHTML += `<p>Баланс: ${user.balance || 0} STAR</p>`;
+
+      // Показываем баланс справа сверху
+      userBalanceDiv.textContent = `Баланс: ${user.balance || 0} STAR`;
+      userBalanceDiv.style.display = 'block';
 
       profilePanel.innerHTML += '<h3>Ваши NFT:</h3><div id="userNFTs"></div>';
 
@@ -333,6 +437,7 @@
 
       const btnLogout = document.createElement('button');
       btnLogout.textContent = 'Выйти из аккаунта';
+      btnLogout.style.marginTop = '10px';
       btnLogout.onclick = () => {
         currentUser = null;
         loginSection.style.display = 'block';
@@ -342,14 +447,15 @@
         loginInput.value = '';
         passwordInput.value = '';
         container.innerHTML = '';
+        userBalanceDiv.style.display = 'none';
       };
       profilePanel.appendChild(btnLogout);
     } catch (e) {
       profilePanel.innerHTML += '<p>Ошибка загрузки профиля</p>';
       console.error(e);
+      userBalanceDiv.style.display = 'none';
     }
   }
-
 </script>
 
 </body>
