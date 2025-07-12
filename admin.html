@@ -4,29 +4,31 @@
   <meta charset="UTF-8" />
   <title>Админка NFT</title>
   <style>
-    body { font-family: sans-serif; background: #eef4fb; padding: 20px; color: #000; }
-    h1, h2 { color: #000; }
-    input, select, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; font-size:16px; }
-    button { cursor: pointer; background: #0077cc; color: white; border: none; border-radius: 6px; }
-    button:hover { background: #005fa3; }
-    .section { background: #fff; border-radius: 8px; padding: 15px; margin-top: 15px; box-shadow: 0 0 8px #aaa; max-width: 600px; }
-    .nft-item { border-bottom: 1px solid #ddd; padding: 10px 0; display:flex; gap:10px; align-items:center; }
-    .nft-item img { width: 80px; border-radius: 6px; }
-    .nft-info { flex-grow: 1; }
-    .nft-code { font-family: monospace; }
-    .balance-inputs { display: flex; gap: 10px; }
-    .balance-inputs input { flex:1; }
-    .balance-inputs button { width: 120px; }
-    .btn-delete { background: #ff4444; font-size: 14px; padding: 6px 12px; }
+    body { font-family: sans-serif; background: #f5f7fb; padding: 20px; color: #333; }
+    h1, h2 { text-align: center; }
+    input, select, button {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    .box { max-width: 600px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 0 5px #ccc; }
+    .nft { margin-top: 10px; background: #eef; padding: 10px; border-radius: 6px; }
+    .chat { margin-top: 30px; }
+    #telegram { text-align: center; margin-top: 30px; }
+    #telegram img { width: 150px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-<h1>Админка: выпуск NFT</h1>
-<div class="section">
+<h1>Панель администратора</h1>
+
+<div class="box">
+  <h2>Создать новую модель NFT</h2>
   <input id="title" placeholder="Название модели" />
-  <input id="image" placeholder="URL изображения" />
-  <input id="price" placeholder="Цена по умолчанию (STAR)" />
+  <input id="image" placeholder="Ссылка на изображение" />
+  <input id="price" placeholder="Цена в STAR" />
   <select id="rarity">
     <option value="">Выбери редкость</option>
     <option value="0.01%">0.01%</option>
@@ -44,142 +46,182 @@
   <button onclick="addModel()">Выпустить NFT</button>
 </div>
 
-<h2>История выпущенных NFT</h2>
-<div id="history" class="section" style="max-height: 400px; overflow-y: auto;"></div>
-
-<h2>Управление балансом пользователей</h2>
-<div class="section">
-  <div class="balance-inputs">
-    <input id="userLogin" placeholder="Логин пользователя" />
-    <input id="amountToAdd" placeholder="Сумма (можно отрицательная)" type="number" />
-  </div>
+<div class="box">
+  <h2>Баланс пользователя</h2>
+  <input id="userLogin" placeholder="Логин пользователя" />
+  <input id="amount" placeholder="Сколько STAR (можно отрицательно)" />
   <button onclick="changeBalance()">Изменить баланс</button>
 </div>
 
+<div class="box">
+  <h2>История выпусков (NFT от админа)</h2>
+  <div id="history"></div>
+</div>
+
+<div class="box chat">
+  <h2>Чат</h2>
+  <select id="chatUserSelect"></select>
+  <textarea id="chatText" placeholder="Сообщение..." rows="3"></textarea>
+  <button onclick="sendMessage()">Отправить</button>
+  <div id="chatMessages" style="max-height: 200px; overflow-y: auto; margin-top: 10px; background:#f0f0f0; padding: 10px;"></div>
+</div>
+
+<div id="telegram">
+  <a href="https://t.me/Maxsimka172" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram">
+  </a>
+</div>
+
 <script>
-  function padNum(num, len = 7) {
-    return String(num).padStart(len, '0');
-  }
-
-  function generateNFTCode(modelIndex, indexInModel) {
-    const letter1 = String.fromCharCode(97 + (modelIndex % 26));
-    const letter2 = String.fromCharCode(97 + Math.floor(modelIndex / 26));
-    return padNum(indexInModel + 1) + letter2 + letter1;
-  }
-
   function getModels() {
     return JSON.parse(localStorage.getItem('nftModels')) || [];
   }
-  function setModels(models) {
-    localStorage.setItem('nftModels', JSON.stringify(models));
-  }
+
   function getNFTs() {
     return JSON.parse(localStorage.getItem('nfts')) || {};
   }
-  function setNFTs(nfts) {
+
+  function saveNFTs(nfts) {
     localStorage.setItem('nfts', JSON.stringify(nfts));
   }
+
   function getUsers() {
     return JSON.parse(localStorage.getItem('users')) || {};
   }
-  function setUsers(users) {
+
+  function saveUsers(users) {
     localStorage.setItem('users', JSON.stringify(users));
   }
 
-  function addModel() {
-    const title = document.getElementById('title').value.trim();
-    const image = document.getElementById('image').value.trim();
-    const price = parseFloat(document.getElementById('price').value.trim());
-    const rarity = document.getElementById('rarity').value;
-    const quantity = parseInt(document.getElementById('quantity').value.trim());
+  function getMessages() {
+    return JSON.parse(localStorage.getItem('messages')) || [];
+  }
 
-    if (!title || !image || isNaN(price) || !rarity || isNaN(quantity) || quantity <= 0) {
-      alert('Заполните все поля корректно');
+  function saveMessages(messages) {
+    localStorage.setItem('messages', JSON.stringify(messages));
+  }
+
+  function generateNFTCode(modelIndex, index) {
+    const num = String(index + 1).padStart(7, '0'); // 0000001
+    const letters = String.fromCharCode(97 + (modelIndex % 26)) + String.fromCharCode(97 + Math.floor(modelIndex / 26));
+    return num + letters;
+  }
+
+  function addModel() {
+    const title = titleInput.value.trim();
+    const image = imageInput.value.trim();
+    const price = parseFloat(priceInput.value.trim());
+    const rarity = rarityInput.value;
+    const quantity = parseInt(quantityInput.value.trim());
+
+    if (!title || !image || isNaN(price) || !rarity || !quantity || quantity <= 0) {
+      alert('Пожалуйста, заполните все поля корректно');
       return;
     }
 
     let models = getModels();
-    let modelIndex = models.findIndex(m => m.title === title);
+    const modelIndex = models.findIndex(m => m.title === title);
+    let modelKey;
+
     if (modelIndex === -1) {
-      modelIndex = models.length;
-      models.push({ title, image, price, rarity, system: "extem beta" });
-      setModels(models);
+      models.push({ title, image, price, rarity, system: "extem beta", count: 0 });
+      modelKey = models.length - 1;
     } else {
-      models[modelIndex].image = image;
-      models[modelIndex].price = price;
-      models[modelIndex].rarity = rarity;
-      setModels(models);
+      modelKey = modelIndex;
     }
 
-    let nfts = getNFTs();
-    const existingCount = Object.values(nfts).filter(n => n.title === title).length;
+    const nfts = getNFTs();
+    let count = models[modelKey].count || 0;
 
     for (let i = 0; i < quantity; i++) {
-      const code = generateNFTCode(modelIndex, existingCount + i);
-      const id = Date.now() + i + Math.floor(Math.random()*1000);
-      nfts[id] = {
-        id,
-        title,
-        image,
-        price,
-        rarity,
-        system: "extem beta",
-        code,
-        owner: 'admin',
-        forSale: false,
-      };
+      const id = Date.now().toString() + i;
+      const code = generateNFTCode(modelKey, count + i);
+      nfts[id] = { id, title, image, price, rarity, system: "extem beta", code, owner: "admin", forSale: false };
     }
-    setNFTs(nfts);
+
+    models[modelKey].count += quantity;
+
+    localStorage.setItem('nftModels', JSON.stringify(models));
+    saveNFTs(nfts);
     renderHistory();
-    alert('NFT успешно выпущены!');
+    alert(`Выпущено ${quantity} NFT для модели "${title}"`);
   }
 
   function renderHistory() {
     const nfts = getNFTs();
-    const arr = Object.values(nfts).filter(n => n.owner === 'admin').sort((a,b) => b.id - a.id);
-    const container = document.getElementById('history');
-    if(arr.length === 0) {
-      container.innerHTML = '<p>Пока нет выпущенных NFT.</p>';
-      return;
-    }
-    container.innerHTML = arr.map(nft => `
-      <div class="nft-item" id="nft-${nft.id}">
-        <img src="${nft.image}" alt="${nft.title}" />
-        <div class="nft-info">
-          <b>${nft.title}</b><br>
-          Код: <span class="nft-code">${nft.code}</span><br>
-          Цена: ${nft.price} STAR<br>
-          Редкость: ${nft.rarity}<br>
-          Владелец: ${nft.owner}
-        </div>
-        <button class="btn-delete" onclick="deleteNFT('${nft.id}')">Удалить</button>
+    const div = document.getElementById('history');
+    const mine = Object.values(nfts).filter(nft => nft.owner === 'admin');
+
+    div.innerHTML = mine.map(n => `
+      <div class="nft">
+        <img src="${n.image}" width="100%">
+        <h4>${n.title}</h4>
+        <p>Код: ${n.code}</p>
+        <p>Цена: ${n.price} STAR</p>
+        <p>Редкость: ${n.rarity}</p>
       </div>
     `).join('');
   }
 
-  function deleteNFT(id) {
-    if(!confirm('Удалить этот NFT?')) return;
-    let nfts = getNFTs();
-    delete nfts[id];
-    setNFTs(nfts);
-    renderHistory();
-  }
-
   function changeBalance() {
     const login = document.getElementById('userLogin').value.trim();
-    const amount = parseFloat(document.getElementById('amountToAdd').value.trim());
+    const amount = parseFloat(document.getElementById('amount').value.trim());
     if (!login || isNaN(amount)) {
-      alert('Введите корректный логин и сумму');
+      alert('Введите логин и сумму');
       return;
     }
-    let users = getUsers();
+    const users = getUsers();
     if (!users[login]) users[login] = { password: '', balance: 0 };
-    users[login].balance = (users[login].balance || 0) + amount;
-    setUsers(users);
-    alert(`Баланс пользователя ${login} изменён на ${amount} STAR`);
+    users[login].balance += amount;
+    saveUsers(users);
+    alert(`Баланс ${login} изменён на ${amount > 0 ? '+' : ''}${amount} STAR`);
   }
 
+  function renderChatUsers() {
+    const users = getUsers();
+    const select = document.getElementById('chatUserSelect');
+    select.innerHTML = '';
+    Object.keys(users).forEach(user => {
+      const option = document.createElement('option');
+      option.value = user;
+      option.textContent = user;
+      select.appendChild(option);
+    });
+  }
+
+  function sendMessage() {
+    const to = document.getElementById('chatUserSelect').value;
+    const text = document.getElementById('chatText').value.trim();
+    if (!to || !text) {
+      alert('Выберите получателя и введите сообщение');
+      return;
+    }
+    const messages = getMessages();
+    messages.push({ from: 'admin', to, text, time: Date.now() });
+    saveMessages(messages);
+    document.getElementById('chatText').value = '';
+    renderMessages();
+  }
+
+  function renderMessages() {
+    const selectedUser = document.getElementById('chatUserSelect').value;
+    const messages = getMessages();
+    const div = document.getElementById('chatMessages');
+    div.innerHTML = '';
+    messages
+      .filter(m => (m.from === 'admin' && m.to === selectedUser) || (m.from === selectedUser && m.to === 'admin'))
+      .forEach(m => {
+        const msg = document.createElement('div');
+        msg.innerHTML = `<b>${m.from}</b>: ${m.text}`;
+        msg.style.marginBottom = '5px';
+        div.appendChild(msg);
+      });
+  }
+
+  document.getElementById('chatUserSelect').addEventListener('change', renderMessages);
+
   renderHistory();
+  renderChatUsers();
 </script>
 
 </body>
